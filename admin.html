@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="LOGO SOLMAR.png">
+    <title>Panel de Administrador - Grupo Misionero Solmar</title>
+    <link rel="icon" type="image/png" href="LOGO SOLMAR.png">
+    <link rel="apple-touch-icon" href="LOGO SOLMAR.png">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #003366; color: white; padding: 20px; }
+        .panel { background: #ffffff; color: #333; padding: 30px; border-radius: 20px; max-width: 1000px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .solmar-header { background: linear-gradient(90deg, #003366, #0066cc); color: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+        .solmar-logo { background: #ffffff; border-radius: 20%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2); border: 2px solid rgba(255, 255, 255, 0.9); }
+        .solmar-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .header-text { flex-grow: 1; text-align: center; }
+        h3 { color: #0056b3; margin-top: 0; }
+        button { padding: 12px 15px; font-size: 14px; font-weight: 600; cursor: pointer; background: #c0392b; color: white; border: none; border-radius: 8px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        th, td { padding: 14px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #0056b3; color: white; font-weight: 600; font-size: 14px; }
+        tr:hover { background-color: #f8f9fa; }
+        .badge { background: #e8f4fd; color: #0056b3; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; border: 1px solid #bbe1fa; }
+        .badge-green { background: #e8f8f5; color: #27ae60; border-color: #a3e4d7; }
+        .badge-purple { background: #f4ecf7; color: #8e44ad; border-color: #d7bde2; }
+        
+        .grid-temas { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 15px; }
+        .btn-toggle-on { background-color: #27ae60; color: white; border: 2px solid #219150; box-shadow: inset 0 -2px rgba(0,0,0,0.1); }
+        .btn-toggle-off { background-color: #ecf0f1; color: #7f8c8d; border: 2px solid #bdc3c7; box-shadow: none; }
+        .btn-toggle-off:hover { background-color: #e0e6ed; color: #333; }
+    /* Ajustes para teléfonos móviles */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .panel { padding: 15px; }
+            th, td { padding: 10px 8px; font-size: 13px; }
+            .solmar-header { flex-direction: column; text-align: center; gap: 10px; }
+            .solmar-header h2 { font-size: 16px !important; }
+            h3 { text-align: center; margin-bottom: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <div class="solmar-header">
+        <div class="solmar-logo"><img src="Logo.png" alt="Logo Solmar"></div>
+        <div class="header-text">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 800;">GRUPO MISIONERO SOLMAR</h2>
+            <span style="color: #f1c40f; font-style: italic; font-size: 13px;">Panel de Administrador — Monitor en Vivo</span>
+        </div>
+    </div>
+    
+    <div style="background: #fff; padding: 20px; border-radius: 15px; border: 2px solid #bbe1fa; margin-bottom: 20px;">
+        <h3 style="margin-top: 0;">🔓 Control de Secciones (Temas)</h3>
+        <p style="color: #555; font-size: 14px; margin-bottom: 10px;">Presiona para encender (✅) o apagar (🔒) cada tema en tiempo real.</p>
+        
+        <div class="grid-temas" id="panel-temas"></div>
+        
+        <div style="margin-top: 15px; text-align: center; padding-top: 15px; border-top: 1px solid #eee;">
+            <button onclick="habilitarTodos()" style="background:#0056b3;">✅ Habilitar Todos</button>
+            <button onclick="bloquearTodos()" style="background:#e74c3c;">🔒 Bloquear Todos</button>
+        </div>
+    </div>
+
+    <div style="background: #e8f4fd; padding: 20px; border-radius: 15px; border: 2px solid #bbe1fa; text-align: center; margin-bottom: 20px;">
+        <h3>Gestión General</h3>
+        <button onclick="reiniciarSala()">🔄 Borrar Todos los Jugadores y Puntajes</button>
+    </div>
+
+    <h3>🏆 Tabla de Posiciones General (Del 1° al último lugar)</h3>
+    <div style="overflow-x: auto; width: 100%; border-radius: 10px; padding-bottom: 10px;">
+    <table>
+        <thead>
+            <tr>
+                <th>Puesto</th>
+                <th style="text-align: center;">Nombre</th>
+                <th style="text-align: center;">Ingresos 👀</th>
+                <th style="text-align: center;">Participaciones ✅</th>
+                <th style="text-align: center;">Preguntas Contestadas 📝</th>
+                <th style="text-align: center;">Partidas Terminadas 🎯</th>
+                <th style="text-align: center;">Puntaje Total 🏆</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-jugadores">
+            <!-- Se llenará automáticamente -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    firebase.initializeApp({ databaseURL: "https://trivia-solmar-default-rtdb.firebaseio.com" });
+    const db = firebase.database();
+
+    const nombresTemas = {
+        evangelios: "Los Evangelios",
+        hechos: "Hechos de los Apóstoles",
+        cartas: "Cartas (Epístolas)",
+        caridad: "La Caridad y SOLMAR",
+        santidad: "La Santidad",
+        servicio: "El Servicio",
+        apocalipsis: "El Apocalipsis",
+        parabolas: "Parábolas de Jesús",
+        hhscc: "Hijas de los Sagrados Corazones"
+    };
+
+    let configTemas = {};
+    
+    db.ref('config_temas').on('value', (snap) => {
+        configTemas = snap.val() || {};
+        renderPanelTemas();
+    });
+
+    function renderPanelTemas() {
+        const container = document.getElementById('panel-temas');
+        container.innerHTML = '';
+        
+        for (const [key, nombre] of Object.entries(nombresTemas)) {
+            let isActivo = configTemas[key] === true;
+            const btn = document.createElement('button');
+            btn.className = isActivo ? 'btn-toggle-on' : 'btn-toggle-off';
+            btn.innerHTML = isActivo ? `✅ ${nombre}` : `🔒 ${nombre}`;
+            btn.onclick = () => { db.ref('config_temas/' + key).set(!isActivo); };
+            container.appendChild(btn);
+        }
+    }
+
+    function habilitarTodos() {
+        let updates = {};
+        for (let key in nombresTemas) updates[key] = true;
+        db.ref('config_temas').set(updates);
+    }
+
+    function bloquearTodos() {
+        let updates = {};
+        for (let key in nombresTemas) updates[key] = false;
+        db.ref('config_temas').set(updates);
+    }
+
+    // Tabla ordenada con todas las columnas solicitadas
+    db.ref('jugadores').on('value', (snapshot) => {
+        const jugadores = snapshot.val();
+        const tbody = document.getElementById('tabla-jugadores');
+        tbody.innerHTML = '';
+        
+        if (!jugadores) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">No hay jugadores registrados todavía.</td></tr>';
+            return;
+        }
+        
+        const arrayJugadores = Object.values(jugadores).sort((a,b) => (b.puntaje || 0) - (a.puntaje || 0));
+        
+        arrayJugadores.forEach((j, index) => {
+            let medalla = index === 0 ? "🥇 " : index === 1 ? "🥈 " : index === 2 ? "🥉 " : `#${index + 1} `;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${medalla}</b></td>
+                    <td style="text-align: center;"><b>${j.nombre || 'Desconocido'}</b></td>
+                    <td style="text-align: center;"><span class="badge">${j.ingresos || 0}</span></td>
+                    <td style="text-align: center;"><span class="badge badge-green">${j.participaciones || 0}</span></td>
+                    <td style="text-align: center;"><span class="badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba;">${j.preguntas_contestadas || 0}</span></td>
+                    <td style="text-align: center;"><span class="badge badge-purple">${j.completadas || 0} partidas</span></td>
+                    <td style="text-align: center;"><b style="color: #0056b3; font-size: 18px;">${j.puntaje || 0} pts</b></td>
+                </tr>`;
+        });
+    });
+
+    function reiniciarSala() {
+        if(confirm("⚠️ ¿Estás completamente seguro de que deseas eliminar a TODOS los jugadores y sus estadísticas?")) {
+            db.ref('jugadores').remove();
+        }
+    }
+</script>
+</body>
+</html>

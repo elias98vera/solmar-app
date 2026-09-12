@@ -1,0 +1,17 @@
+{
+  "name": "Grupo Misionero SOLMAR",
+  "short_name": "SOLMAR",
+  "description": "Desafío Bíblico Interactivo",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0056b3",
+  "theme_color": "#0056b3",
+  "icons": [
+    {
+      "src": "Logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
