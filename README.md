@@ -1,0 +1,2 @@
+# solmar-app
+Trivia SOLMAR
