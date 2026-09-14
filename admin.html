@@ -83,6 +83,7 @@
                 <th style="text-align: center;">Preguntas Contestadas 📝</th>
                 <th style="text-align: center;">Partidas Terminadas 🎯</th>
                 <th style="text-align: center;">Puntaje Total 🏆</th>
+                <th style="text-align: center;">Acciones ⚙️</th>
             </tr>
         </thead>
         <tbody id="tabla-jugadores">
@@ -165,6 +166,9 @@
                     <td style="text-align: center;"><span class="badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba;">${j.preguntas_contestadas || 0}</span></td>
                     <td style="text-align: center;"><span class="badge badge-purple">${j.completadas || 0} partidas</span></td>
                     <td style="text-align: center;"><b style="color: #0056b3; font-size: 18px;">${j.puntaje || 0} pts</b></td>
+                    <td style="text-align: center;">
+                    <button onclick="eliminarJugador('${j.id}')" style="background: #e74c3c; padding: 6px 12px; font-size: 12px; width: auto; box-shadow: none;">🗑️ Eliminar</button>
+                </td>
                 </tr>`;
         });
     });
@@ -174,6 +178,17 @@
             db.ref('jugadores').remove();
         }
     }
+    function eliminarJugador(idJugador) {
+    if(confirm("⚠️ ¿Estás seguro de que deseas eliminar a este jugador y todo su progreso de forma permanente?")) {
+        db.ref('jugadores/' + idJugador).remove()
+            .then(() => {
+                // El evento .on('value') actualizará la tabla automáticamente
+            })
+            .catch((error) => {
+                alert("Error al intentar eliminar: " + error.message);
+            });
+    }
+}
 </script>
 </body>
 </html>
