@@ -167,7 +167,7 @@
                     <td style="text-align: center;"><span class="badge badge-purple">${j.completadas || 0} partidas</span></td>
                     <td style="text-align: center;"><b style="color: #0056b3; font-size: 18px;">${j.puntaje || 0} pts</b></td>
                     <td style="text-align: center;">
-                    <button onclick="eliminarJugador('${j.id}')" style="background: #e74c3c; padding: 6px 12px; font-size: 12px; width: auto; box-shadow: none;">🗑️ Eliminar</button>
+                    <button onclick="eliminarJugador('${j.nombre}')" style="background: #e74c3c; padding: 6px 12px; font-size: 12px; width: auto; box-shadow: none;">🗑️ Eliminar</button> Eliminar</button>
                 </td>
                 </tr>`;
         });
@@ -178,15 +178,20 @@
             db.ref('jugadores').remove();
         }
     }
-    function eliminarJugador(idJugador) {
-    if(confirm("⚠️ ¿Estás seguro de que deseas eliminar a este jugador y todo su progreso de forma permanente?")) {
-        db.ref('jugadores/' + idJugador).remove()
-            .then(() => {
-                // El evento .on('value') actualizará la tabla automáticamente
-            })
-            .catch((error) => {
-                alert("Error al intentar eliminar: " + error.message);
-            });
+    function eliminarJugador(nombreOriginal) {
+        if(confirm(`⚠️ ¿Estás seguro de que deseas eliminar a "${nombreOriginal}" de forma permanente?`)) {
+            // Limpiamos el nombre exactamente igual a como se crea en el index para asegurar que el ID sea idéntico
+            let idGenerado = nombreOriginal.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            
+            db.ref('jugadores/' + idGenerado).remove()
+                .then(() => {
+                    // Intentamos también limpiar por si acaso el nodo exacto quedó con otra estructura
+                    console.log("Jugador eliminado con ID:", idGenerado);
+                })
+                .catch((error) => {
+                    alert("Error al intentar eliminar: " + error.message);
+                });
+        }
     }
 }
 </script>
