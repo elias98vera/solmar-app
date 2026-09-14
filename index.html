@@ -176,6 +176,11 @@
     if (esIos() && !estaInstalada()) {
         document.getElementById('ios-install-banner').style.display = 'block';
     }
+    // Verificación limpia solo por modo standalone del navegador
+    const estaInstaladaOStandalone = () => {
+        return window.matchMedia('(display-mode: standalone)').matches || 
+               window.navigator.standalone === true;
+    };
     firebase.initializeApp({ databaseURL: "https://trivia-solmar-default-rtdb.firebaseio.com" });
     const db = firebase.database();
 
