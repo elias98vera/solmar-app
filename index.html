@@ -375,31 +375,56 @@
         }
     });
 
+    // --- LÓGICA INTELIGENTE DE INSTALACIÓN PWA ---
+    let eventoInstalacion;
+
+    // Función para verificar si ya está instalada o abierta como app
+    const estaInstaladaOStandalone = () => {
+        return window.matchMedia('(display-mode: standalone)').matches || 
+               window.navigator.standalone === true || 
+               localStorage.getItem('app_instalada') === 'true';
+    };
+
+    // Escuchar cuando el navegador permite instalar
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        eventoInstalacion = e;
+        
+        // Solo mostrar el banner si NO está instalada
+        if (!estaInstaladaOStandalone()) {
+            document.getElementById('android-install-banner').style.display = 'block';
+        }
+    });
+
+    // Detectar automáticamente cuando la instalación se completa con éxito
+    window.addEventListener('appinstalled', () => {
+        localStorage.setItem('app_instalada', 'true');
+        document.getElementById('android-install-banner').style.display = 'none';
+        eventoInstalacion = null;
+    });
+
+    // Función al hacer clic en el botón de instalar
     function instalarApp() {
         if (eventoInstalacion) {
-            // 1. Cambiamos el diseño del botón para mostrar que está "trabajando"
             const btn = document.querySelector('#android-install-banner button');
             const textoOriginal = btn.innerHTML;
             btn.innerHTML = '⏳ Instalando... por favor espera';
-            btn.style.background = '#f39c12'; // Cambia a color naranja de proceso
+            btn.style.background = '#f39c12';
             btn.disabled = true;
 
-            // 2. Lanzamos el cuadro nativo del celular
             eventoInstalacion.prompt();
             
-            // 3. Esperamos a ver qué decide el usuario
             eventoInstalacion.userChoice.then((choiceResult) => {
                 if (choiceResult.outcome === 'accepted') {
-                    // Si acepta, mostramos éxito
-                    btn.innerHTML = '✅ ¡Instalada! Búscala en tu menú de aplicaciones';
+                    // Guardamos en la memoria que ya se instaló
+                    localStorage.setItem('app_instalada', 'true');
+                    btn.innerHTML = '✅ ¡Instalada con éxito!';
                     btn.style.background = '#27ae60';
                     
-                    // Ocultamos el aviso después de 4 segundos
                     setTimeout(() => {
                         document.getElementById('android-install-banner').style.display = 'none';
-                    }, 4000);
+                    }, 3000);
                 } else {
-                    // Si el usuario cancela, regresamos el botón a la normalidad
                     btn.innerHTML = textoOriginal;
                     btn.style.background = '#27ae60';
                     btn.disabled = false;
@@ -409,6 +434,15 @@
         }
     }
 
+    // Ocultar el banner automáticamente si ya se abrió la app desde la pantalla de inicio
+    if (estaInstaladaOStandalone()) {
+        document.addEventListener("DOMContentLoaded", () => {
+            const bannerAndroid = document.getElementById('android-install-banner');
+            const bannerIos = document.getElementById('ios-install-banner');
+            if (bannerAndroid) bannerAndroid.style.display = 'none';
+            if (bannerIos) bannerIos.style.display = 'none';
+        });
+    }
     function shuffleArray(array) {
         let arr = [...array];
         for (let i = arr.length - 1; i > 0; i--) {
