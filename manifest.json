@@ -3,8 +3,6 @@
   "short_name": "SOLMAR",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#003366",
-  "theme_color": "#003366",
 "icons": [
     {
       "src": "solmar imagen2.png",
