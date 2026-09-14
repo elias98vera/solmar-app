@@ -7,17 +7,11 @@
   "background_color": "#0056b3",
   "theme_color": "#0056b3",
 "icons": [
-  {
-    "src": "solmar imagen.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "any"
-  },
-  {
-    "src": "solmar imagenLogo.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "maskable"
-  }
-]
+    {
+      "src": "Logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
