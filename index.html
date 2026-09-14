@@ -375,9 +375,6 @@
         }
     });
 
-    // --- LÓGICA INTELIGENTE DE INSTALACIÓN PWA ---
-    let eventoInstalacion;
-
     // Función para verificar si ya está instalada o abierta como app
     const estaInstaladaOStandalone = () => {
         return window.matchMedia('(display-mode: standalone)').matches || 
