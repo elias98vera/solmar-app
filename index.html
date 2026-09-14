@@ -373,6 +373,40 @@
         }
     });
 
+    function instalarApp() {
+        if (eventoInstalacion) {
+            // 1. Cambiamos el diseño del botón para mostrar que está "trabajando"
+            const btn = document.querySelector('#android-install-banner button');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = '⏳ Instalando... por favor espera';
+            btn.style.background = '#f39c12'; // Cambia a color naranja de proceso
+            btn.disabled = true;
+
+            // 2. Lanzamos el cuadro nativo del celular
+            eventoInstalacion.prompt();
+            
+            // 3. Esperamos a ver qué decide el usuario
+            eventoInstalacion.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    // Si acepta, mostramos éxito
+                    btn.innerHTML = '✅ ¡Instalada! Búscala en tu menú de aplicaciones';
+                    btn.style.background = '#27ae60';
+                    
+                    // Ocultamos el aviso después de 4 segundos
+                    setTimeout(() => {
+                        document.getElementById('android-install-banner').style.display = 'none';
+                    }, 4000);
+                } else {
+                    // Si el usuario cancela, regresamos el botón a la normalidad
+                    btn.innerHTML = textoOriginal;
+                    btn.style.background = '#27ae60';
+                    btn.disabled = false;
+                }
+                eventoInstalacion = null;
+            });
+        }
+    }
+
     function shuffleArray(array) {
         let arr = [...array];
         for (let i = arr.length - 1; i > 0; i--) {
