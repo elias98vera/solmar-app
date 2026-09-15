@@ -146,54 +146,102 @@
         const jugadores = snapshot.val();
         const tbody = document.getElementById('tabla-jugadores');
         tbody.innerHTML = '';
-        
+
         if (!jugadores) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666;">No hay jugadores registrados todavía.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#666; padding:20px 10px;">No hay jugadores registrados todavía.</td></tr>';
             return;
         }
-        
-        const arrayJugadores = Object.values(jugadores).sort((a,b) => (b.puntaje || 0) - (a.puntaje || 0));
-        
-        arrayJugadores.forEach((j, index) => {
-            let medalla = index === 0 ? "🥇 " : index === 1 ? "🥈 " : index === 2 ? "🥉 " : `#${index + 1} `;
 
-            tbody.innerHTML += `
-                <tr>
-                    <td><b>${medalla}</b></td>
-                    <td style="text-align: center;"><b>${j.nombre || 'Desconocido'}</b></td>
-                    <td style="text-align: center;"><span class="badge">${j.ingresos || 0}</span></td>
-                    <td style="text-align: center;"><span class="badge badge-green">${j.participaciones || 0}</span></td>
-                    <td style="text-align: center;"><span class="badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba;">${j.preguntas_contestadas || 0}</span></td>
-                    <td style="text-align: center;"><span class="badge badge-purple">${j.completadas || 0} partidas</span></td>
-                    <td style="text-align: center;"><b style="color: #0056b3; font-size: 18px;">${j.puntaje || 0} pts</b></td>
-                    <td style="text-align: center;">
-                    <button onclick="eliminarJugador('${j.nombre}')" style="background: #e74c3c; padding: 6px 12px; font-size: 12px; width: auto; box-shadow: none;">🗑️ Eliminar</button> Eliminar</button>
-                </td>
-                </tr>`;
+        // Conservamos el ID real de Firebase para eliminar exactamente ese jugador.
+        const arrayJugadores = Object.entries(jugadores)
+            .map(([id, jugador]) => ({ id, ...jugador }))
+            .sort((a, b) => (b.puntaje || 0) - (a.puntaje || 0));
+
+        arrayJugadores.forEach((j, index) => {
+            const medalla = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : `#${index + 1} `;
+
+            const tr = document.createElement('tr');
+
+            const celdas = [
+                `<b>${medalla}</b>`,
+                `<b>${escapeHtml(j.nombre || 'Desconocido')}</b>`,
+                `<span class="badge">${j.ingresos || 0}</span>`,
+                `<span class="badge badge-green">${j.participaciones || 0}</span>`,
+                `<span class="badge" style="background:#fff3cd; color:#856404; border-color:#ffeeba;">${j.preguntas_contestadas || 0}</span>`,
+                `<span class="badge badge-purple">${j.completadas || 0} partidas</span>`,
+                `<b style="color: #0056b3; font-size: 18px;">${j.puntaje || 0} pts</b>`
+            ];
+
+            celdas.forEach((html, i) => {
+                const td = document.createElement('td');
+                td.style.textAlign = i === 0 ? 'left' : 'center';
+                td.innerHTML = html;
+                tr.appendChild(td);
+            });
+
+            const tdAcciones = document.createElement('td');
+            tdAcciones.style.textAlign = 'center';
+
+            const botonEliminar = document.createElement('button');
+            botonEliminar.type = 'button';
+            botonEliminar.textContent = '🗑️ Eliminar';
+            botonEliminar.style.cssText = 'background:#e74c3c; padding:6px 12px; font-size:12px; width:auto; box-shadow:none;';
+            botonEliminar.title = `Eliminar a ${j.nombre || 'este jugador'}`;
+            botonEliminar.addEventListener('click', () => eliminarJugador(j.id, j.nombre || 'Desconocido'));
+
+            tdAcciones.appendChild(botonEliminar);
+            tr.appendChild(tdAcciones);
+            tbody.appendChild(tr);
         });
+    }, (error) => {
+        console.error('Error leyendo jugadores:', error);
+        const tbody = document.getElementById('tabla-jugadores');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#c0392b; padding:20px;">No se pudieron cargar los jugadores.</td></tr>';
     });
 
-    function reiniciarSala() {
-        if(confirm("⚠️ ¿Estás completamente seguro de que deseas eliminar a TODOS los jugadores y sus estadísticas?")) {
-            db.ref('jugadores').remove();
-        }
+    function escapeHtml(valor) {
+        return String(valor)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
-    function eliminarJugador(nombreOriginal) {
-        if(confirm(`⚠️ ¿Estás seguro de que deseas eliminar a "${nombreOriginal}" de forma permanente?`)) {
-            // Limpiamos el nombre exactamente igual a como se crea en el index para asegurar que el ID sea idéntico
-            let idGenerado = nombreOriginal.toLowerCase().replace(/[^a-z0-9]/g, '_');
-            
-            db.ref('jugadores/' + idGenerado).remove()
+
+    function eliminarJugador(id, nombre) {
+        if (!id) {
+            alert('No se pudo identificar al jugador.');
+            return;
+        }
+
+        const confirmado = confirm(
+            `⚠️ ¿Estás seguro de que deseas eliminar a "${nombre}" de forma permanente?\n\nSe eliminarán sus estadísticas y puntajes. Esta acción no se puede deshacer.`
+        );
+
+        if (!confirmado) return;
+
+        db.ref('jugadores/' + id).remove()
+            .then(() => {
+                console.log('Jugador eliminado:', id, nombre);
+            })
+            .catch((error) => {
+                console.error('Error al eliminar jugador:', error);
+                alert('❌ Error al intentar eliminar: ' + error.message);
+            });
+    }
+
+    function reiniciarSala() {
+        if (confirm('⚠️ ¿Estás completamente seguro de que deseas eliminar a TODOS los jugadores y sus estadísticas?\n\nEsta acción no se puede deshacer.')) {
+            db.ref('jugadores').remove()
                 .then(() => {
-                    // Intentamos también limpiar por si acaso el nodo exacto quedó con otra estructura
-                    console.log("Jugador eliminado con ID:", idGenerado);
+                    console.log('Todos los jugadores fueron eliminados.');
                 })
                 .catch((error) => {
-                    alert("Error al intentar eliminar: " + error.message);
+                    console.error('Error al eliminar todos los jugadores:', error);
+                    alert('❌ Error al eliminar todos los jugadores: ' + error.message);
                 });
         }
     }
-}
 </script>
 </body>
 </html>
