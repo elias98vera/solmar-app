@@ -32,6 +32,17 @@
         .btn-toggle-on { background-color: #27ae60; color: white; border: 2px solid #219150; box-shadow: inset 0 -2px rgba(0,0,0,0.1); }
         .btn-toggle-off { background-color: #ecf0f1; color: #7f8c8d; border: 2px solid #bdc3c7; box-shadow: none; }
         .btn-toggle-off:hover { background-color: #e0e6ed; color: #333; }
+
+        .admin-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .admin-modal-card { background: #fff; color: #333; width: min(560px, 100%); border-radius: 16px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
+        .admin-modal-card h3 { margin-bottom: 8px; }
+        .admin-modal-card label { display:block; font-weight:600; margin: 12px 0 6px; color:#003366; }
+        .admin-modal-card input, .admin-modal-card select { width:100%; box-sizing:border-box; padding:11px 12px; border:2px solid #d7dee8; border-radius:8px; font-family:inherit; font-size:14px; }
+        .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+        .btn-secondary { background:#7f8c8d !important; }
+        .btn-edit { background:#f39c12 !important; padding:6px 10px !important; font-size:12px !important; width:auto !important; box-shadow:none !important; }
+        .btn-merge { background:#8e44ad !important; padding:6px 10px !important; font-size:12px !important; width:auto !important; box-shadow:none !important; }
+        .acciones { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
     /* Ajustes para teléfonos móviles */
         @media (max-width: 600px) {
             body { padding: 10px; }
@@ -92,6 +103,35 @@
     </table>
 </div>
 
+
+<div class="admin-modal" id="modal-editar">
+    <div class="admin-modal-card">
+        <h3>✏️ Cambiar nombre</h3>
+        <p id="editar-info" style="color:#666; margin-top:0;"></p>
+        <label for="nuevo-nombre">Nombre que se mostrará</label>
+        <input id="nuevo-nombre" type="text" maxlength="80" placeholder="Ej.: Olga Suárez">
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="cerrarModal('modal-editar')">Cancelar</button>
+            <button type="button" style="background:#f39c12;" onclick="guardarNombre()">💾 Guardar nombre</button>
+        </div>
+    </div>
+</div>
+
+<div class="admin-modal" id="modal-unir">
+    <div class="admin-modal-card">
+        <h3>🔗 Unir cuentas</h3>
+        <p style="color:#666; margin-top:0;">La cuenta principal conservará su nombre visible. La otra cuenta quedará como alias y sus estadísticas/progreso se combinarán.</p>
+        <label for="cuenta-principal">Cuenta principal</label>
+        <select id="cuenta-principal"></select>
+        <label for="cuenta-secundaria">Cuenta que se unirá</label>
+        <select id="cuenta-secundaria"></select>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="cerrarModal('modal-unir')">Cancelar</button>
+            <button type="button" style="background:#8e44ad;" onclick="confirmarUnion()">🔗 Unir cuentas</button>
+        </div>
+    </div>
+</div>
+
 <script>
     firebase.initializeApp({ databaseURL: "https://trivia-solmar-default-rtdb.firebaseio.com" });
     const db = firebase.database();
@@ -109,6 +149,8 @@
     };
 
     let configTemas = {};
+    let jugadoresActuales = {};
+    let editarJugadorId = null;
     
     db.ref('config_temas').on('value', (snap) => {
         configTemas = snap.val() || {};
@@ -141,25 +183,43 @@
         db.ref('config_temas').set(updates);
     }
 
-    // Tabla ordenada con todas las columnas solicitadas
+    function normalizarNombre(nombre) {
+        return String(nombre || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/[^a-z0-9 ]/g, '')
+            .replace(/\s+/g, '_');
+    }
+
+    // Tabla en tiempo real. Las cuentas ya fusionadas se conservan como respaldo
+    // pero no aparecen como jugadores independientes.
     db.ref('jugadores').on('value', (snapshot) => {
-        const jugadores = snapshot.val();
+        jugadoresActuales = snapshot.val() || {};
+        renderTablaJugadores();
+    }, (error) => {
+        console.error('Error leyendo jugadores:', error);
+        document.getElementById('tabla-jugadores').innerHTML = '<tr><td colspan="8" style="text-align:center; color:#c0392b; padding:20px;">No se pudieron cargar los jugadores.</td></tr>';
+    });
+
+    function renderTablaJugadores() {
         const tbody = document.getElementById('tabla-jugadores');
         tbody.innerHTML = '';
 
-        if (!jugadores) {
+        const arrayJugadores = Object.entries(jugadoresActuales)
+            .filter(([id, jugador]) => jugador && !jugador.fusionado_a)
+            .map(([id, jugador]) => ({ id, ...jugador }))
+            .sort((a, b) => (b.puntaje || 0) - (a.puntaje || 0));
+
+        if (arrayJugadores.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#666; padding:20px 10px;">No hay jugadores registrados todavía.</td></tr>';
             return;
         }
 
-        // Conservamos el ID real de Firebase para eliminar exactamente ese jugador.
-        const arrayJugadores = Object.entries(jugadores)
-            .map(([id, jugador]) => ({ id, ...jugador }))
-            .sort((a, b) => (b.puntaje || 0) - (a.puntaje || 0));
-
         arrayJugadores.forEach((j, index) => {
             const medalla = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : `#${index + 1} `;
-
             const tr = document.createElement('tr');
 
             const celdas = [
@@ -180,24 +240,31 @@
             });
 
             const tdAcciones = document.createElement('td');
-            tdAcciones.style.textAlign = 'center';
+            tdAcciones.className = 'acciones';
+
+            const botonEditar = document.createElement('button');
+            botonEditar.type = 'button';
+            botonEditar.className = 'btn-edit';
+            botonEditar.textContent = '✏️ Nombre';
+            botonEditar.addEventListener('click', () => abrirEditarNombre(j.id));
+
+            const botonUnir = document.createElement('button');
+            botonUnir.type = 'button';
+            botonUnir.className = 'btn-merge';
+            botonUnir.textContent = '🔗 Unir';
+            botonUnir.addEventListener('click', () => abrirUnirCuentas(j.id));
 
             const botonEliminar = document.createElement('button');
             botonEliminar.type = 'button';
             botonEliminar.textContent = '🗑️ Eliminar';
-            botonEliminar.style.cssText = 'background:#e74c3c; padding:6px 12px; font-size:12px; width:auto; box-shadow:none;';
-            botonEliminar.title = `Eliminar a ${j.nombre || 'este jugador'}`;
+            botonEliminar.style.cssText = 'background:#e74c3c; padding:6px 10px; font-size:12px; width:auto; box-shadow:none;';
             botonEliminar.addEventListener('click', () => eliminarJugador(j.id, j.nombre || 'Desconocido'));
 
-            tdAcciones.appendChild(botonEliminar);
+            tdAcciones.append(botonEditar, botonUnir, botonEliminar);
             tr.appendChild(tdAcciones);
             tbody.appendChild(tr);
         });
-    }, (error) => {
-        console.error('Error leyendo jugadores:', error);
-        const tbody = document.getElementById('tabla-jugadores');
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#c0392b; padding:20px;">No se pudieron cargar los jugadores.</td></tr>';
-    });
+    }
 
     function escapeHtml(valor) {
         return String(valor)
@@ -206,6 +273,162 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    function abrirEditarNombre(id) {
+        const jugador = jugadoresActuales[id];
+        if (!jugador) return;
+        editarJugadorId = id;
+        document.getElementById('editar-info').textContent = `Cuenta actual: ${jugador.nombre || 'Sin nombre'}`;
+        document.getElementById('nuevo-nombre').value = jugador.nombre || '';
+        document.getElementById('modal-editar').style.display = 'flex';
+        setTimeout(() => document.getElementById('nuevo-nombre').focus(), 50);
+    }
+
+    function guardarNombre() {
+        const nuevoNombre = document.getElementById('nuevo-nombre').value.trim();
+        if (!editarJugadorId || !nuevoNombre) {
+            alert('Ingresa un nombre válido.');
+            return;
+        }
+
+        const jugador = jugadoresActuales[editarJugadorId];
+        if (!jugador) return;
+
+        const nombreAnterior = jugador.nombre || '';
+        const aliasAnterior = normalizarNombre(nombreAnterior);
+        const aliasNuevo = normalizarNombre(nuevoNombre);
+        const aliases = { ...(jugador.aliases_nombres || {}) };
+        if (aliasAnterior) aliases[aliasAnterior] = true;
+        if (aliasNuevo) aliases[aliasNuevo] = true;
+
+        db.ref('jugadores/' + editarJugadorId).update({
+            nombre: nuevoNombre,
+            nombre_normalizado: aliasNuevo,
+            aliases_nombres: aliases
+        }).then(() => {
+            cerrarModal('modal-editar');
+        }).catch((error) => {
+            console.error(error);
+            alert('❌ No se pudo cambiar el nombre: ' + error.message);
+        });
+    }
+
+    function abrirUnirCuentas(idActual) {
+        const activas = Object.entries(jugadoresActuales)
+            .filter(([id, jugador]) => jugador && !jugador.fusionado_a);
+        if (activas.length < 2) {
+            alert('Necesitas al menos dos cuentas para poder unirlas.');
+            return;
+        }
+
+        const selectPrincipal = document.getElementById('cuenta-principal');
+        const selectSecundaria = document.getElementById('cuenta-secundaria');
+        selectPrincipal.innerHTML = '';
+        selectSecundaria.innerHTML = '';
+
+        activas.forEach(([id, jugador]) => {
+            const texto = `${jugador.nombre || 'Sin nombre'} — ${jugador.puntaje || 0} pts`;
+            const opt1 = new Option(texto, id);
+            const opt2 = new Option(texto, id);
+            selectPrincipal.add(opt1);
+            selectSecundaria.add(opt2);
+        });
+
+        selectPrincipal.value = idActual;
+        if (activas.some(([id]) => id !== idActual)) {
+            selectSecundaria.value = activas.find(([id]) => id !== idActual)[0];
+        }
+
+        document.getElementById('modal-unir').style.display = 'flex';
+    }
+
+    function fusionarObjeto(base, extra) {
+        const resultado = { ...base };
+        const camposNumericos = ['puntaje', 'ingresos', 'participaciones', 'completadas', 'preguntas_contestadas'];
+
+        camposNumericos.forEach((campo) => {
+            resultado[campo] = (Number(base?.[campo]) || 0) + (Number(extra?.[campo]) || 0);
+        });
+
+        resultado.nombre = base.nombre || extra.nombre || 'Jugador';
+        resultado.nombre_normalizado = normalizarNombre(resultado.nombre);
+        resultado.aliases_nombres = { ...(base.aliases_nombres || {}), ...(extra.aliases_nombres || {}) };
+
+        const aliasExtra = normalizarNombre(extra.nombre || '');
+        if (aliasExtra) resultado.aliases_nombres[aliasExtra] = true;
+        const aliasBase = normalizarNombre(base.nombre || '');
+        if (aliasBase) resultado.aliases_nombres[aliasBase] = true;
+
+        // Conservamos progreso de temas sin borrar lo que exista en ninguna de las dos cuentas.
+        resultado.estado_temas = { ...(base.estado_temas || {}) };
+        Object.entries(extra.estado_temas || {}).forEach(([tema, estadoExtra]) => {
+            const estadoBase = resultado.estado_temas[tema];
+            if (!estadoBase) {
+                resultado.estado_temas[tema] = estadoExtra;
+            } else if (Array.isArray(estadoBase.indices) && Array.isArray(estadoExtra?.indices)) {
+                resultado.estado_temas[tema] = {
+                    ...estadoBase,
+                    indices: [...new Set([...estadoBase.indices, ...estadoExtra.indices])]
+                };
+            }
+        });
+
+        resultado.ronda_completadas = { ...(base.ronda_completadas || {}), ...(extra.ronda_completadas || {}) };
+        resultado.secciones = { ...(base.secciones || {}), ...(extra.secciones || {}) };
+        return resultado;
+    }
+
+    function confirmarUnion() {
+        const principalId = document.getElementById('cuenta-principal').value;
+        const secundariaId = document.getElementById('cuenta-secundaria').value;
+        if (!principalId || !secundariaId || principalId === secundariaId) {
+            alert('Selecciona dos cuentas diferentes.');
+            return;
+        }
+
+        const principal = jugadoresActuales[principalId];
+        const secundaria = jugadoresActuales[secundariaId];
+        if (!principal || !secundaria) {
+            alert('No se encontraron ambas cuentas. Actualiza la página e inténtalo nuevamente.');
+            return;
+        }
+
+        const combinado = fusionarObjeto(principal, secundaria);
+        combinado.fusionados_desde = {
+            ...(principal.fusionados_desde || {}),
+            [secundariaId]: secundaria.nombre || secundariaId
+        };
+
+        const nombrePrincipal = principal.nombre || principalId;
+        const nombreSecundaria = secundaria.nombre || secundariaId;
+
+        const ok = confirm(
+            `🔗 Vas a unir estas cuentas:\n\nPRINCIPAL:\n${nombrePrincipal}\n\nSECUNDARIA:\n${nombreSecundaria}\n\nSe sumarán sus puntos, ingresos, participaciones, preguntas y partidas. La cuenta secundaria quedará redirigida a la principal.\n\n¿Deseas continuar?`
+        );
+        if (!ok) return;
+
+        const updates = {};
+        updates['jugadores/' + principalId] = combinado;
+        updates['jugadores/' + secundariaId + '/fusionado_a'] = principalId;
+        updates['jugadores/' + secundariaId + '/nombre_fusionado'] = nombreSecundaria;
+
+        // Registrar también el alias de la cuenta secundaria bajo la principal.
+        const aliasSec = normalizarNombre(nombreSecundaria);
+        if (aliasSec) updates['jugadores/' + principalId + '/aliases_nombres/' + aliasSec] = true;
+
+        db.ref().update(updates).then(() => {
+            cerrarModal('modal-unir');
+            alert(`✅ Cuentas unidas. ${nombreSecundaria} ahora entra por ${nombrePrincipal}.`);
+        }).catch((error) => {
+            console.error(error);
+            alert('❌ No se pudieron unir las cuentas: ' + error.message);
+        });
+    }
+
+    function cerrarModal(id) {
+        document.getElementById(id).style.display = 'none';
+        if (id === 'modal-editar') editarJugadorId = null;
     }
 
     function eliminarJugador(id, nombre) {
@@ -217,13 +440,10 @@
         const confirmado = confirm(
             `⚠️ ¿Estás seguro de que deseas eliminar a "${nombre}" de forma permanente?\n\nSe eliminarán sus estadísticas y puntajes. Esta acción no se puede deshacer.`
         );
-
         if (!confirmado) return;
 
         db.ref('jugadores/' + id).remove()
-            .then(() => {
-                console.log('Jugador eliminado:', id, nombre);
-            })
+            .then(() => console.log('Jugador eliminado:', id, nombre))
             .catch((error) => {
                 console.error('Error al eliminar jugador:', error);
                 alert('❌ Error al intentar eliminar: ' + error.message);
@@ -233,9 +453,6 @@
     function reiniciarSala() {
         if (confirm('⚠️ ¿Estás completamente seguro de que deseas eliminar a TODOS los jugadores y sus estadísticas?\n\nEsta acción no se puede deshacer.')) {
             db.ref('jugadores').remove()
-                .then(() => {
-                    console.log('Todos los jugadores fueron eliminados.');
-                })
                 .catch((error) => {
                     console.error('Error al eliminar todos los jugadores:', error);
                     alert('❌ Error al eliminar todos los jugadores: ' + error.message);
