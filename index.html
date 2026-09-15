@@ -460,13 +460,21 @@
         .replace(/\s+/g, '_');
 }
 
+function idNombreHistorico(nombre) {
+    // Mantiene compatibilidad con las cuentas creadas por la versión anterior.
+    return String(nombre || '').toLowerCase().replace(/[^a-z0-9]/g, '_');
+}
+
 function resolverCuentaFusionada(id, jugadores) {
     let actual = id;
     const vistos = {};
 
     while (jugadores[actual] && jugadores[actual].fusionado_a && !vistos[actual]) {
         vistos[actual] = true;
-        actual = jugadores[actual].fusionado_a;
+        const siguiente = jugadores[actual].fusionado_a;
+
+        if (!jugadores[siguiente]) break;
+        actual = siguiente;
     }
 
     return actual;
@@ -486,23 +494,78 @@ function conectarPerfilJugador(id) {
         const datos = snapJugador.val();
         if (!datos) return;
 
-        // Si el administrador fusiona esta cuenta mientras el usuario está conectado,
-        // lo redirigimos automáticamente a la cuenta principal.
+        // Si el administrador fusionó esta cuenta mientras el usuario está jugando,
+        // pasamos automáticamente a la cuenta principal.
         if (datos.fusionado_a && datos.fusionado_a !== playerId) {
             conectarPerfilJugador(datos.fusionado_a);
             return;
         }
 
         perfilJugador = datos;
-        renderizarPantallaTemas();
 
-        const nombreVisible = perfilJugador.nombre || 'Jugador';
-        document.getElementById('display-name').innerText = nombreVisible;
+        // MUY IMPORTANTE: mostrar siempre el nombre oficial guardado en Firebase,
+        // no el texto que la persona escribió al entrar.
+        document.getElementById('display-name').innerText = perfilJugador.nombre || 'Jugador';
+
+        renderizarPantallaTemas();
     });
+}
+
+function buscarCuentaParaIngresar(jugadores, rawName) {
+    const idHistorico = idNombreHistorico(rawName);
+    const nombreNormalizado = normalizarNombre(rawName);
+
+    // 1. Si existe el ID que la aplicación antigua habría creado para ese texto,
+    //    respetamos esa cuenta. Así Olga Suárez y Olga Suarez pueden coexistir
+    //    hasta que el administrador decida unirlas.
+    if (jugadores[idHistorico]) {
+        return resolverCuentaFusionada(idHistorico, jugadores);
+    }
+
+    const candidatos = [];
+
+    Object.entries(jugadores).forEach(([id, jugador]) => {
+        if (!jugador) return;
+
+        const nombreGuardado = normalizarNombre(jugador.nombre || '');
+        const aliasNombres = jugador.aliases_nombres || {};
+
+        const coincideNombre = nombreGuardado === nombreNormalizado;
+        const coincideAlias = aliasNombres[nombreNormalizado] === true;
+        const coincideCampoNormalizado = jugador.nombre_normalizado === nombreNormalizado;
+
+        if (coincideNombre || coincideAlias || coincideCampoNormalizado) {
+            const cuentaFinal = resolverCuentaFusionada(id, jugadores);
+
+            if (!candidatos.includes(cuentaFinal)) {
+                candidatos.push(cuentaFinal);
+            }
+        }
+    });
+
+    if (candidatos.length === 0) {
+        return null;
+    }
+
+    // 2. Si hay varias cuentas similares, NO se bloquea al jugador.
+    //    Elegimos la cuenta con mayor puntaje. El administrador puede unirlas
+    //    después desde Admin.
+    candidatos.sort((idA, idB) => {
+        const a = jugadores[idA] || {};
+        const b = jugadores[idB] || {};
+
+        const puntos = (Number(b.puntaje) || 0) - (Number(a.puntaje) || 0);
+        if (puntos !== 0) return puntos;
+
+        return (Number(b.ingresos) || 0) - (Number(a.ingresos) || 0);
+    });
+
+    return candidatos[0];
 }
 
 function iniciarSesion() {
     const rawName = document.getElementById('playerName').value.trim();
+
     if (!rawName) {
         alert('Por favor ingresa tu nombre.');
         return;
@@ -517,64 +580,47 @@ function iniciarSesion() {
 
     db.ref('jugadores').once('value', (snapshot) => {
         const jugadores = snapshot.val() || {};
-        const candidatos = [];
+        const cuentaEncontrada = buscarCuentaParaIngresar(jugadores, rawName);
 
-        Object.entries(jugadores).forEach(([id, jugador]) => {
-            if (!jugador) return;
-
-            const nombreActual = normalizarNombre(jugador.nombre || '');
-            const aliasNombres = jugador.aliases_nombres || {};
-
-            const coincideNombre = nombreActual === nombreNormalizado;
-            const coincideAlias = aliasNombres[nombreNormalizado] === true;
-
-            if (coincideNombre || coincideAlias) {
-                const cuentaFinal = resolverCuentaFusionada(id, jugadores);
-                if (!candidatos.includes(cuentaFinal)) {
-                    candidatos.push(cuentaFinal);
-                }
-            }
-        });
-
-        // Si hay dos cuentas activas con el mismo nombre normalizado,
-        // NO elegimos una al azar: el administrador debe unirlas.
-        if (candidatos.length > 1) {
-            alert(
-                '⚠️ Encontramos más de una cuenta con ese nombre.\n\n' +
-                'Por seguridad, el administrador debe unir esas cuentas desde el panel antes de continuar.'
-            );
-            return;
-        }
-
+        // ============================================================
         // CUENTA EXISTENTE
-        if (candidatos.length === 1) {
-            playerId = candidatos[0];
-
+        // ============================================================
+        if (cuentaEncontrada) {
+            playerId = cuentaEncontrada;
             const jugador = jugadores[playerId];
-            const aliases = { ...(jugador.aliases_nombres || {}) };
 
-            // Solo se agrega automáticamente como alias cuando la diferencia
-            // corresponde a mayúsculas, tildes o puntuación; no por similitud.
-            aliases[nombreNormalizado] = true;
+            const updates = {
+                ingresos: firebase.database.ServerValue.increment(1)
+            };
 
-            db.ref('jugadores/' + playerId).update({
-                ingresos: firebase.database.ServerValue.increment(1),
-                aliases_nombres: aliases,
-                nombre_normalizado: normalizarNombre(jugador.nombre || rawName)
-            }).then(() => {
-                conectarPerfilJugador(playerId);
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('topics-screen').style.display = 'block';
-            });
+            // Guardamos la variante normalizada como alias solo para facilitar
+            // futuras entradas con cambios de tildes/mayúsculas.
+            const aliasesActuales = { ...(jugador.aliases_nombres || {}) };
+            aliasesActuales[nombreNormalizado] = true;
+            updates.aliases_nombres = aliasesActuales;
+
+            db.ref('jugadores/' + playerId).update(updates)
+                .then(() => {
+                    conectarPerfilJugador(playerId);
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('topics-screen').style.display = 'block';
+                })
+                .catch((error) => {
+                    console.error('Error al ingresar:', error);
+                    alert('No se pudo iniciar la sesión. Inténtalo nuevamente.');
+                });
 
             return;
         }
 
+        // ============================================================
         // CUENTA NUEVA
+        // ============================================================
+        // Usamos el nombre normalizado para nuevas cuentas. Esto evita que
+        // "Elías" y "Elias" creen dos cuentas nuevas en el futuro.
         const nuevoId = nombreNormalizado;
-        playerId = nuevoId;
 
-        db.ref('jugadores/' + nuevoId).set({
+        const nuevaCuenta = {
             nombre: rawName,
             nombre_normalizado: nombreNormalizado,
             aliases_nombres: {
@@ -588,14 +634,21 @@ function iniciarSesion() {
             secciones: {},
             estado_temas: {},
             ronda_completadas: {}
-        }).then(() => {
-            conectarPerfilJugador(nuevoId);
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('topics-screen').style.display = 'block';
-        }).catch((error) => {
-            console.error(error);
-            alert('No se pudo crear/abrir la cuenta: ' + error.message);
-        });
+        };
+
+        db.ref('jugadores/' + nuevoId).set(nuevaCuenta)
+            .then(() => {
+                conectarPerfilJugador(nuevoId);
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('topics-screen').style.display = 'block';
+            })
+            .catch((error) => {
+                console.error('Error creando cuenta:', error);
+                alert('No se pudo crear la cuenta: ' + error.message);
+            });
+    }, (error) => {
+        console.error('Error leyendo jugadores:', error);
+        alert('No se pudo conectar con la base de datos. Inténtalo nuevamente.');
     });
 }
 
