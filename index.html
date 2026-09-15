@@ -449,39 +449,156 @@
         return arr;
     }
 
-    function iniciarSesion() {
-        const rawName = document.getElementById('playerName').value.trim();
-        if (!rawName) { alert("Por favor ingresa tu nombre."); return; }
+    function normalizarNombre(nombre) {
+    return String(nombre || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ')
+        .replace(/[^a-z0-9 ]/g, '')
+        .replace(/\s+/g, '_');
+}
 
-        playerId = rawName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+function resolverCuentaFusionada(id, jugadores) {
+    let actual = id;
+    const vistos = {};
 
-        db.ref('jugadores/' + playerId).once('value', (snapshot) => {
-            if (!snapshot.exists()) {
-                db.ref('jugadores/' + playerId).set({ 
-                    nombre: rawName, 
-                    puntaje: 0, 
-                    ingresos: 1, 
-                    participaciones: 0, 
-                    completadas: 0,
-                    preguntas_contestadas: 0,
-                    secciones: {},
-                    estado_temas: {},
-                    ronda_completadas: {}
-                });
-            } else {
-                db.ref('jugadores/' + playerId + '/ingresos').set(firebase.database.ServerValue.increment(1));
+    while (jugadores[actual] && jugadores[actual].fusionado_a && !vistos[actual]) {
+        vistos[actual] = true;
+        actual = jugadores[actual].fusionado_a;
+    }
+
+    return actual;
+}
+
+let listenerJugadorRef = null;
+
+function conectarPerfilJugador(id) {
+    if (listenerJugadorRef) {
+        listenerJugadorRef.off();
+    }
+
+    playerId = id;
+    listenerJugadorRef = db.ref('jugadores/' + playerId);
+
+    listenerJugadorRef.on('value', (snapJugador) => {
+        const datos = snapJugador.val();
+        if (!datos) return;
+
+        // Si el administrador fusiona esta cuenta mientras el usuario está conectado,
+        // lo redirigimos automáticamente a la cuenta principal.
+        if (datos.fusionado_a && datos.fusionado_a !== playerId) {
+            conectarPerfilJugador(datos.fusionado_a);
+            return;
+        }
+
+        perfilJugador = datos;
+        renderizarPantallaTemas();
+
+        const nombreVisible = perfilJugador.nombre || 'Jugador';
+        document.getElementById('display-name').innerText = nombreVisible;
+    });
+}
+
+function iniciarSesion() {
+    const rawName = document.getElementById('playerName').value.trim();
+    if (!rawName) {
+        alert('Por favor ingresa tu nombre.');
+        return;
+    }
+
+    const nombreNormalizado = normalizarNombre(rawName);
+
+    if (!nombreNormalizado) {
+        alert('Ingresa un nombre válido.');
+        return;
+    }
+
+    db.ref('jugadores').once('value', (snapshot) => {
+        const jugadores = snapshot.val() || {};
+        const candidatos = [];
+
+        Object.entries(jugadores).forEach(([id, jugador]) => {
+            if (!jugador) return;
+
+            const nombreActual = normalizarNombre(jugador.nombre || '');
+            const aliasNombres = jugador.aliases_nombres || {};
+
+            const coincideNombre = nombreActual === nombreNormalizado;
+            const coincideAlias = aliasNombres[nombreNormalizado] === true;
+
+            if (coincideNombre || coincideAlias) {
+                const cuentaFinal = resolverCuentaFusionada(id, jugadores);
+                if (!candidatos.includes(cuentaFinal)) {
+                    candidatos.push(cuentaFinal);
+                }
             }
-            
-            db.ref('jugadores/' + playerId).on('value', (snapJugador) => {
-                perfilJugador = snapJugador.val();
-                renderizarPantallaTemas();
+        });
+
+        // Si hay dos cuentas activas con el mismo nombre normalizado,
+        // NO elegimos una al azar: el administrador debe unirlas.
+        if (candidatos.length > 1) {
+            alert(
+                '⚠️ Encontramos más de una cuenta con ese nombre.\n\n' +
+                'Por seguridad, el administrador debe unir esas cuentas desde el panel antes de continuar.'
+            );
+            return;
+        }
+
+        // CUENTA EXISTENTE
+        if (candidatos.length === 1) {
+            playerId = candidatos[0];
+
+            const jugador = jugadores[playerId];
+            const aliases = { ...(jugador.aliases_nombres || {}) };
+
+            // Solo se agrega automáticamente como alias cuando la diferencia
+            // corresponde a mayúsculas, tildes o puntuación; no por similitud.
+            aliases[nombreNormalizado] = true;
+
+            db.ref('jugadores/' + playerId).update({
+                ingresos: firebase.database.ServerValue.increment(1),
+                aliases_nombres: aliases,
+                nombre_normalizado: normalizarNombre(jugador.nombre || rawName)
+            }).then(() => {
+                conectarPerfilJugador(playerId);
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('topics-screen').style.display = 'block';
             });
-            
-            document.getElementById('display-name').innerText = rawName;
+
+            return;
+        }
+
+        // CUENTA NUEVA
+        const nuevoId = nombreNormalizado;
+        playerId = nuevoId;
+
+        db.ref('jugadores/' + nuevoId).set({
+            nombre: rawName,
+            nombre_normalizado: nombreNormalizado,
+            aliases_nombres: {
+                [nombreNormalizado]: true
+            },
+            puntaje: 0,
+            ingresos: 1,
+            participaciones: 0,
+            completadas: 0,
+            preguntas_contestadas: 0,
+            secciones: {},
+            estado_temas: {},
+            ronda_completadas: {}
+        }).then(() => {
+            conectarPerfilJugador(nuevoId);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('topics-screen').style.display = 'block';
+        }).catch((error) => {
+            console.error(error);
+            alert('No se pudo crear/abrir la cuenta: ' + error.message);
         });
-    }
+    });
+}
+
 
     function renderizarPantallaTemas() {
         if(!perfilJugador) return;
