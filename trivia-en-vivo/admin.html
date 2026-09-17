@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador - Grupo Misionero Solmar</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #003366; color: white; padding: 20px; }
+        .panel { background: #ffffff; color: #333; padding: 30px; border-radius: 20px; max-width: 900px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .solmar-header {
+            background: linear-gradient(90deg, #003366, #0066cc);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .solmar-logo {
+        background: #ffffff;
+        border-radius: 20%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        }
+        .solmar-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .header-text {
+            flex-grow: 1;
+            text-align: center;
+        }
+        h1 { color: #0056b3; font-weight: 800; text-align: center; margin: 0; }
+        button { padding: 15px 20px; font-size: 15px; font-weight: 600; margin: 8px; cursor: pointer; background: #e74c3c; color: white; border: none; border-radius: 10px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-green { background: #27ae60; } 
+        .btn-blue { background: #0056b3; } 
+        .btn-purple { background: #8e44ad; }
+        .btn-orange { background: #e67e22; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        th, td { padding: 14px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #0056b3; color: white; font-weight: 600; }
+        tr:hover { background-color: #f8f9fa; }
+        .winner-banner { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #fff; padding: 20px; border-radius: 15px; text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 20px; display: none; box-shadow: 0 5px 20px rgba(241,196,15,0.4); animation: bounce 1s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <div class="solmar-header">
+        <div class="solmar-logo">
+            <img src="Logo.png" alt="Logo Solmar">
+        </div>
+        <div class="header-text">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 800;">GRUPO MISIONERO SOLMAR</h2>
+            <span style="color: #f1c40f; font-style: italic; font-size: 13px;">Sor Luz María Rojas — Panel de Administrador</span>
+        </div>
+    </div>
+
+    <div id="winner-announcement" class="winner-banner">
+        🎉 ¡Felicidades al Gran Ganador del Desafío! 🏆<br>
+        <span id="winner-name" style="font-size: 26px; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
+    </div>
+    
+    <div id="controles-inicio">
+        <h3>Selecciona el tema para iniciar (15 preguntas aleatorias):</h3>
+        <button class="btn-blue" onclick="iniciarJuego('evangelios')">📖 Los Evangelios</button>
+        <button class="btn-blue" onclick="iniciarJuego('hechos')">🕊️ Hechos de los Apóstoles</button>
+        <button class="btn-blue" onclick="iniciarJuego('cartas')">📜 Cartas (Epístolas)</button>
+        <button class="btn-blue" onclick="iniciarJuego('caridad')">❤️ La Caridad y SOLMAR</button>
+        <button class="btn-blue" onclick="iniciarJuego('santidad')">🔥 La Santidad</button>
+        <button class="btn-blue" onclick="iniciarJuego('servicio')">🙌 El Servicio</button>
+        <button class="btn-blue" onclick="iniciarJuego('apocalipsis')">✨ El Apocalipsis</button>
+        <button class="btn-blue" onclick="iniciarJuego('parabolas')">🌾 Parábolas de Jesús</button>
+        <button class="btn-purple" onclick="iniciarJuego('hhscc')">⛪ Hijas de los Sagrados Corazones de Jesús y de María</button>
+        <br><hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        <button onclick="terminarJuego()" style="background: #c0392b;">🏁 Finalizar Partida y Premiar</button>
+        <button onclick="reiniciarSala()" style="background: #7f8c8d;">🔄 Limpiar Sala (Borrar Jugadores)</button>
+    </div>
+
+    <div id="controles-juego" style="display:none; background: #e8f4fd; padding: 20px; border-radius: 15px; border: 2px solid #bbe1fa; text-align: center;">
+        <h2 id="estado-actual" style="color: #003366; margin-top: 0;">Jugando...</h2>
+        <p style="font-size: 15px; color: #0056b3; font-weight: 600;">Sección activa: <span id="admin-active-section" style="color: #e67e22;">-</span></p>
+        <button class="btn-green" onclick="siguientePregunta()">➡️ Lanzar Siguiente Pregunta</button>
+        <button class="btn-orange" onclick="finalizarSeccion()">🏁 Finalizar Sección</button>
+        <button onclick="terminarJuego()" style="background: #c0392b;">🏁 Finalizar Partida y Premiar</button>
+    </div>
+
+    <h3 style="margin-top: 30px; color: #003366;">🏆 Tabla de Posiciones en Vivo</h3>
+    <table>
+        <thead><tr><th>Puesto</th><th>Nombre del Equipo</th><th>Integrantes</th><th>Puntaje</th></tr></thead>
+        <tbody id="tabla-jugadores"></tbody>
+    </table>
+</div>
+
+<script>
+    firebase.initializeApp({ databaseURL: "https://grupo-misionero-solmar-default-rtdb.firebaseio.com" });
+    const db = firebase.database();
+
+    const nombresTemas = {
+        evangelios: "Los Evangelios",
+        hechos: "Hechos de los Apóstoles",
+        cartas: "Cartas (Epístolas)",
+        caridad: "La Caridad y SOLMAR",
+        santidad: "La Santidad",
+        servicio: "El Servicio",
+        apocalipsis: "El Apocalipsis",
+        parabolas: "Parábolas de Jesús",
+        hhscc: "Hijas de los Sagrados Corazones de Jesús y de María"
+    };
+
+    let temaActual = "";
+    let indicePregunta = 0;
+    const totalPreguntasPartida = 15;
+
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.tagName === "BUTTON") {
+                activeElement.click();
+            }
+        }
+    });
+
+    db.ref('jugadores').on('value', (snapshot) => {
+        const jugadores = snapshot.val();
+        const tbody = document.getElementById('tabla-jugadores');
+        tbody.innerHTML = '';
+        if (!jugadores) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666;">No hay equipos conectados en la sala.</td></tr>';
+            return;
+        }
+
+        const jugadoresAgrupados = {};
+        Object.values(jugadores).forEach(j => {
+            const nombreNormalizado = (j.nombre || 'Equipo').trim().toUpperCase();
+            
+            if (!jugadoresAgrupados[nombreNormalizado]) {
+                jugadoresAgrupados[nombreNormalizado] = {
+                    nombre: (j.nombre || 'Equipo').trim(),
+                    integrantes: j.integrantes,
+                    puntaje: j.puntaje || 0
+                };
+            } else {
+                jugadoresAgrupados[nombreNormalizado].puntaje += (j.puntaje || 0);
+                jugadoresAgrupados[nombreNormalizado].integrantes = Math.max(jugadoresAgrupados[nombreNormalizado].integrantes, j.integrantes || 1);
+            }
+        });
+
+        const arrayJugadores = Object.values(jugadoresAgrupados).sort((a,b) => b.puntaje - a.puntaje);
+        arrayJugadores.forEach((j, index) => {
+            let medalla = index === 0 ? "🥇 " : index === 1 ? "🥈 " : index === 2 ? "🥉 " : `#${index + 1} `;
+            tbody.innerHTML += `<tr><td><b>${medalla}</b></td><td>${j.nombre}</td><td>${j.integrantes || 1} integrantes</td><td><b style="color: #0056b3; font-size: 18px;">${j.puntaje || 0} pts</b></td></tr>`;
+        });
+    });
+
+    function iniciarJuego(tema) {
+        temaActual = tema;
+        indicePregunta = 0;
+        document.getElementById('winner-announcement').style.display = 'none';
+        
+        const sesionKey = Date.now();
+        db.ref('estadoJuego').set({ 
+            estado: 'jugando', 
+            tema: tema, 
+            temaActualKey: sesionKey,
+            preguntaIndex: indicePregunta 
+        });
+        
+        document.getElementById('controles-inicio').style.display = 'none';
+        document.getElementById('controles-juego').style.display = 'block';
+        document.getElementById('admin-active-section').innerText = nombresTemas[tema] || tema;
+        document.getElementById('estado-actual').innerText = `Pregunta 1 de ${totalPreguntasPartida} en pantalla.`;
+    }
+
+    function siguientePregunta() {
+        indicePregunta++;
+        if (indicePregunta >= totalPreguntasPartida) {
+            alert("¡Se han completado las 15 preguntas de esta sesión! Puedes usar 'Finalizar Sección' para elegir otro tema o 'Finalizar Partida y Premiar' para concluir.");
+            return;
+        }
+        db.ref('estadoJuego').update({ preguntaIndex: indicePregunta });
+        document.getElementById('estado-actual').innerText = `Pregunta ${indicePregunta + 1} de ${totalPreguntasPartida} en pantalla.`;
+    }
+
+    function finalizarSeccion() {
+        db.ref('estadoJuego').set({ estado: 'esperando' });
+        document.getElementById('controles-inicio').style.display = 'block';
+        document.getElementById('controles-juego').style.display = 'none';
+    }
+
+    function terminarJuego() {
+        db.ref('estadoJuego').update({ estado: 'terminado' });
+        document.getElementById('controles-inicio').style.display = 'block';
+        document.getElementById('controles-juego').style.display = 'none';
+        
+        db.ref('jugadores').once('value', (snapshot) => {
+            const jugadores = snapshot.val();
+            if (jugadores) {
+                const jugadoresAgrupados = {};
+                Object.values(jugadores).forEach(j => {
+                    const nombreNormalizado = (j.nombre || 'Equipo').trim().toUpperCase();
+                    if (!jugadoresAgrupados[nombreNormalizado]) {
+                        jugadoresAgrupados[nombreNormalizado] = { nombre: (j.nombre || 'Equipo').trim(), puntaje: j.puntaje || 0 };
+                    } else {
+                        jugadoresAgrupados[nombreNormalizado].puntaje += (j.puntaje || 0);
+                    }
+                });
+
+                const arrayJugadores = Object.values(jugadoresAgrupados).sort((a,b) => b.puntaje - a.puntaje);
+                if (arrayJugadores.length > 0) {
+                    const ganador = arrayJugadores[0];
+                    document.getElementById('winner-name').innerText = `🏆 ${ganador.nombre} (${ganador.puntaje} puntos) 🏆`;
+                }
+            }
+        });
+
+        document.getElementById('winner-announcement').style.display = 'block';
+        lanzarFuegosArtificiales();
+    }
+
+    function reiniciarSala() {
+        if(confirm("¿Seguro que deseas eliminar los puntajes anteriores y reiniciar la sala?")) {
+            db.ref('jugadores').remove();
+            db.ref('estadoJuego').set({ estado: 'esperando' });
+            document.getElementById('winner-announcement').style.display = 'none';
+        }
+    }
+
+    function lanzarFuegosArtificiales() {
+        var duration = 4 * 1000;
+        var animationEnd = Date.now() + duration;
+        var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+        function randomInRange(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        var interval = setInterval(function() {
+            var timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+            var particleCount = 50 * (timeLeft / duration);
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+            confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+    }
+</script>
+</body>
+</html>

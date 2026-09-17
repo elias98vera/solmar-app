@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRUPO MISIONERO SOLMAR - Desafío Bíblico</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0056b3, #00a8ff, #f4f7f6);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            max-width: 550px;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .solmar-header {
+            background: linear-gradient(90deg, #003366, #0066cc);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .solmar-logo {
+        background: #ffffff;
+        border-radius: 20%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        }
+        .solmar-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .header-text {
+            flex-grow: 1;
+            text-align: center;
+        }
+        .solmar-header h2 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: 0.5px; }
+        .solmar-header span { color: #f1c40f; font-style: italic; font-size: 13px; font-weight: 600; }
+        input { padding: 12px; margin: 10px 0; width: 90%; font-size: 16px; border: 2px solid #ccc; border-radius: 8px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #0056b3; box-shadow: 0 0 8px rgba(0,86,179,0.3); }
+        button { padding: 15px; width: 100%; font-size: 16px; font-weight: 600; background-color: #0056b3; color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 10px; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,86,179,0.3); }
+        button:hover { background-color: #003d82; transform: scale(1.02); }
+        .option-btn { background-color: #f0f4f8; color: #333; text-align: left; margin-bottom: 12px; border: 2px solid #d1d8e0; font-weight: 600; transition: 0.2s; }
+        .option-btn:hover { background-color: #e1ecf4; border-color: #0056b3; }
+        #waiting-screen, #game-screen, #result-screen { display: none; }
+        #timer { color: #d9534f; font-weight: 800; font-size: 20px; }
+        .message { font-size: 18px; font-weight: 800; color: #0056b3; margin-top: 20px; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .podium-box {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(241,196,15,0.4);
+            animation: bounce 1s infinite alternate;
+        }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+        .summary-box {
+            background: #f0f4f8;
+            border: 2px solid #bbe1fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        .summary-box h3 { margin: 0 0 10px 0; color: #003366; font-size: 15px; text-align: center; }
+        .summary-item { font-size: 13px; margin-bottom: 8px; font-weight: 600; color: #444; border-bottom: 1px dashed #d1d8e0; padding-bottom: 5px; }
+        .summary-total { display: flex; justify-content: space-between; font-size: 15px; margin-top: 8px; padding-top: 6px; border-top: 2px solid #0056b3; font-weight: 800; color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="login-screen">
+    <div class="solmar-header">
+        <div class="solmar-logo">
+            <img src="Logo.png" alt="Logo Solmar">
+        </div>
+        <div class="header-text">
+            <h2>GRUPO MISIONERO SOLMAR</h2>
+            <span>Sor Luz María Rojas</span>
+        </div>
+    </div>
+    <p>¡Bienvenido! Ingresa el nombre de tu equipo y la cantidad de integrantes.</p>
+    <input type="text" id="playerName" placeholder="Nombre del Equipo" required>
+    <input type="number" id="playerAge" placeholder="Número de integrantes en el equipo" required min="1">
+    <button onclick="unirseAlJuego()">Unirme al Desafío</button>
+</div>
+
+<div class="container" id="waiting-screen">
+    <div class="solmar-header">
+        <div class="solmar-logo">
+            <img src="Logo.png" alt="Logo Solmar">
+        </div>
+        <div class="header-text">
+            <h2>GRUPO MISIONERO SOLMAR</h2>
+            <span>Sor Luz María Rojas</span>
+        </div>
+    </div>
+    <h1>¡Estás dentro, <span id="display-name"></span>!</h1>
+    <div class="message" id="waiting-status-msg">🕊️ Sección finalizada. Esperando al administrador...</div>
+    
+    <div id="section-summary-container" class="summary-box">
+        <h3>📊 Detalle de Rendimiento por Sección</h3>
+        <div id="summary-list"><i style="color: #666; font-size: 12px;">Aún no hay secciones completadas.</i></div>
+        <div class="summary-total">
+            <span>Puntaje Total General:</span>
+            <span id="summary-total-pts">0 pts</span>
+        </div>
+    </div>
+    <button onclick="salirDelJuego()" style="background: #e74c3c; margin-top: 20px;">🚪 Salir del Juego</button>
+</div>
+
+<div class="container" id="game-screen">
+    <div class="solmar-header" style="padding: 10px; margin-bottom: 10px;">
+        <div class="solmar-logo" style="width: 32px; height: 32px;">
+            <img src="Logo.png" alt="Logo Solmar">
+        </div>
+        <div class="header-text"><h2 style="font-size: 14px;">GRUPO MISIONERO SOLMAR</h2></div>
+    </div>
+    <div style="background: #e8f4fd; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 14px; color: #003366; margin-bottom: 12px;">
+        📖 Sección Actual: <span id="current-section-label" style="color: #e67e22;">-</span>
+    </div>
+    <div style="display:flex; justify-content: space-between; font-weight: 800; margin-bottom: 15px; font-size: 16px; color: #003366;">
+        <span>Puntos de esta sección: <span id="score">0</span></span>
+        <span>⏱️ Tiempo: <span id="timer">0</span>s</span>
+    </div>
+    <h2 id="question-text" style="text-align: left; font-size: 18px; color: #222;">Pregunta</h2>
+    <div id="options-container"></div>
+    <div id="feedback-message" class="message"></div>
+</div>
+
+<div class="container" id="result-screen">
+    <div class="solmar-header">
+        <div class="solmar-logo">
+            <img src="Logo.png" alt="Logo Solmar">
+        </div>
+        <div class="header-text">
+            <h2>GRUPO MISIONERO SOLMAR</h2>
+            <span>Sor Luz María Rojas</span>
+        </div>
+    </div>
+    <div class="podium-box">
+        <h2 style="margin: 0; font-size: 22px;">🏆 ¡Desafío Finalizado! 🏆</h2>
+        <p style="margin: 5px 0 0 0; font-size: 15px;">¡Gracias por participar en comunidad!</p>
+    </div>
+    <h2>Tus puntos totales: <span id="final-score" style="color: #0056b3; font-size: 36px;">0</span></h2>
+    <div id="final-summary-box" class="summary-box" style="margin-top: 15px;">
+        <h3>📊 Rendimiento Final por Sección</h3>
+        <div id="final-summary-list"></div>
+    </div>
+    <button onclick="salirDelJuego()" style="background: #e74c3c; margin-top: 20px;">🚪 Salir del Juego</button>
+</div>
+
+<script>
+    firebase.initializeApp({ databaseURL: "https://grupo-misionero-solmar-default-rtdb.firebaseio.com" });
+    const db = firebase.database();
+
+    const nombresTemas = {
+        evangelios: "Los Evangelios",
+        hechos: "Hechos de los Apóstoles",
+        cartas: "Cartas (Epístolas)",
+        caridad: "La Caridad y SOLMAR",
+        santidad: "La Santidad",
+        servicio: "El Servicio",
+        apocalipsis: "El Apocalipsis",
+        parabolas: "Parábolas de Jesús",
+        hhscc: "Hijas de los Sagrados Corazones de Jesús y de María"
+    };
+
+    const bancosPreguntas = {
+        evangelios: [
+            { q: "¿Qué significa la palabra 'Evangelio' proveniente del griego Euangelion?", options: ["BUENA NOTICIA", "Palabra Sagrada", "Historia Antigua", "Mandamiento Divino"], answer: 0 },
+            { q: "¿En qué años aproximados fueron escritos los evangelios canónicos?", options: ["Entre los años 60 y 100 d.C.", "Entre el año 1 y 30 d.C.", "En el siglo III d.C.", "En el año 313 d.C."], answer: 0 },
+            { q: "¿Quién era Marcos, autor del Evangelio según San Marcos?", options: ["Discípulo de San Pedro y colaborador de San Pablo", "Uno de los doce apóstoles", "Un médico de origen griego", "Un recaudador de impuestos judío"], answer: 0 },
+            { q: "¿Cuál es considerado el evangelio más corto y con más movimiento y milagros?", options: ["Marcos", "Mateo", "Lucas", "Juan"], answer: 0 },
+            { q: "¿Qué símbolo representa al evangelista San Marcos?", options: ["Un león alado", "Un hombre o ángel", "Un buey o toro", "Un águila"], answer: 0 },
+            { q: "¿Cuál era el nombre original de Mateo antes de seguir a Jesús?", options: ["Leví", "Saulo", "Zaqueo", "Simón"], answer: 0 },
+            { q: "¿A qué público iba dirigido principalmente el Evangelio de San Mateo?", options: ["A los judíos, para mostrar que Jesús era el Mesías", "A los romanos en persecución", "A los gentiles griegos", "A una comunidad desconocida"], answer: 0 },
+            { q: "¿Qué oficio tenía Lucas antes de unirse a la misión cristiana?", options: ["Médico", "Pescador", "Recaudador de impuestos", "Carpintero"], answer: 0 },
+            { q: "¿Qué evangelista escribió también el libro de los Hechos de los Apóstoles?", options: ["Lucas", "Mateo", "Marcos", "Juan"], answer: 0 },
+            { q: "¿Cómo es conocido tradicionalmente San Juan en el cuarto evangelio?", options: ["El discípulo amado", "El publicano fiel", "El médico amado", "El siervo sufriente"], answer: 0 },
+            { q: "¿Qué símbolo representa la contemplación de los misterios divinos en el Evangelio de San Juan?", options: ["Un águila", "Un león", "Un buey", "Un ángel"], answer: 0 },
+            { q: "¿Qué evangelio destaca profundamente la divinidad de Cristo comenzando con 'En el principio existía el Verbo'?", options: ["Juan", "Mateo", "Marcos", "Lucas"], answer: 0 },
+            { q: "¿Cómo murió tradicionalmente San Juan según la historia eclesial?", options: ["De muerte natural tras ser desterrado", "Mártir decapitado en Roma", "Crucificado en Patmos", "Apedreado en Jerusalén"], answer: 0 },
+            { q: "¿Qué evangelio es considerado por excelencia 'el evangelio de la misericordia'?", options: ["San Lucas", "San Mateo", "San Marcos", "San Juan"], answer: 0 },
+            { q: "¿Qué profecía del Antiguo Testamento cumplía principalmente la genealogía inicial de Jesús?", options: ["El descenso del linaje del rey David", "La promesa hecha a Abraham en Egipto", "La ley entregada en el Sinaí", "La construcción del Templo de Salomón"], answer: 0 }
+        ],
+        hechos: [
+            { q: "¿Qué libro del Nuevo Testamento narra la transición entre los Evangelios y la expansión de la Iglesia?", options: ["Los Hechos de los Apóstoles", "El Apocalipsis", "La Carta a los Romanos", "La Carta a los Hebreos"], answer: 0 },
+            { q: "¿A quién van dirigidos tanto el Evangelio de Lucas como el libro de los Hechos?", options: ["A Teófilo", "A la comunidad de Roma", "A los hebreos de Jerusalén", "A Timoteo y Tito"], answer: 0 },
+            { q: "¿Quién es considerado el verdadero protagonista invisible que guía todo el libro de los Hechos?", options: ["El Espíritu Santo", "San Pedro", "San Pablo", "San Juan"], answer: 0 },
+            { q: "¿Qué frase resume el mapa geográfico de la misión en Hechos 1,8?", options: ["En Jerusalén, en toda Judea y Samaría, y hasta los confines de la tierra", "De Galilea a Nazaret y Belén", "De Roma a España y las islas", "En Antioquía, Éfeso y Atenas"], answer: 0 },
+            { q: "¿Qué acontecimiento marca el nacimiento misionero público de la Iglesia en Hechos 2?", options: ["Pentecostés con el viento y las lenguas de fuego", "La Ascensión al cielo", "El Concilio de Jerusalén", "La conversión de Cornelio"], answer: 0 },
+            { q: "¿Cuáles eran los cuatro pilares fundamentales de la vida de la primera comunidad cristiana?", options: ["La enseñanza de los apóstoles, la comunión, la fracción del pan y la oración", "El bautismo, la limosna, el ayuno y las peregrinaciones", "La ley de Moisés, el templo, los sacrificios y los salmos", "Las cartas, los milagros, el desierto y el juicio"], answer: 0 },
+            { q: "¿Quién fue el primer diácono en morir como mártir tras ser apedreado?", options: ["Esteban", "Felipe", "Matías", "Bernabé"], answer: 0 },
+            { q: "¿Qué centurión romano protagonizó la apertura de la fe hacia los gentiles tras ser bautizado por Pedro?", options: ["Cornelio", "Longinos", "Julio", "Claudio"], answer: 0 },
+            { q: "¿Qué frase escuchó Saulo en el camino a Damasco que transformó su vida?", options: ["'Saulo, Saulo, ¿por qué me persigues?'", "'Vete y no peques más'", "'Sígueme y serás pescador de hombres'", "'Guarda los mandamientos de la ley'"], answer: 0 },
+            { q: "¿Qué gran asamblea resolvió que los gentiles no necesitaban circuncidarse para ser salvados?", options: ["El Concilio de Jerusalén", "El Concilio de Nicea", "El Concilio de Éfeso", "El Concilio de Trento"], answer: 0 },
+            { q: "¿Qué oficio tenía San Pablo para ganarse la vida de forma independiente durante sus viajes?", options: ["Constructor de tiendas (carpas)", "Pescador", "Carpintero", "Médico"], answer: 0 },
+            { q: "¿Cómo se llamaba el joven que se durmió escuchando a Pablo en un piso alto y cayó, siendo resucitado?", options: ["Eutico", "Tito", "Timoteo", "Erasto"], answer: 0 },
+            { q: "¿A qué isla mediterránea llegó náufrago San Pablo en su viaje final rumbo a juicio en Roma?", options: ["Malta", "Chipre", "Creta", "Sicilia"], answer: 0 },
+            { q: "¿Con qué escena final de enseñanza culmina el libro de los Hechos de los Apóstoles?", options: ["Con Pablo predicando libremente el Reino de Dios en Roma", "Con Pablo ejecutado en una plaza", "Con Pedro viajando a España", "Con la destrucción definitiva de Jerusalén"], answer: 0 },
+            { q: "¿Qué enseñanza principal nos deja el libro de Hechos ante las persecuciones y problemas?", options: ["Que la presencia de dificultades no significa la ausencia de Dios", "Que debemos huir de las ciudades grandes", "Que la Iglesia debe aislarse del imperio", "Que la ley humana está por encima de todo"], answer: 0 }
+        ],
+        cartas: [
+            { q: "¿Cuántas cartas o epístolas contiene en total el Nuevo Testamento?", options: ["21 cartas", "13 cartas", "27 cartas", "7 cartas católicas"], answer: 0 },
+            { q: "¿Quién escribió la mayor cantidad de epístolas dirigidas a las comunidades fundadas en el imperio?", options: ["San Pablo", "San Pedro", "San Juan", "Santiago"], answer: 0 },
+            { q: "¿Cuál es el tema central que enseña San Pablo en su profunda Carta a los Romanos?", options: ["La salvación por la gracia mediante la fe en Jesucristo", "La organización de los diáconos", "El apocalipsis final", "Normas estrictas de alimentación"], answer: 0 },
+            { q: "¿Qué célebre capítulo de la Primera Carta a los Corintios contiene el famoso 'Himno al Amor'?", options: ["Capítulo 13", "Capítulo 3", "Capítulo 8", "Capítulo 15"], answer: 0 },
+            { q: "¿Qué gran verdad enseña San Pablo en la Carta a los Gálatas sobre la libertad?", options: ["Que Cristo nos hizo libres para vivir según el Espíritu", "Que la ley de Moisés es obligatoria", "Que cada quien puede hacer lo que quiera", "Que la fe no requiere obras"], answer: 0 },
+            { q: "¿Qué pasaje de la Carta a los Efesios describe la protección espiritual frente al mal?", options: ["La armadura de Dios (Ef 6,10-17)", "Los frutos del espíritu", "El himno a Cristo servidor", "Las cualidades del obispo"], answer: 0 },
+            { q: "¿Qué carta de San Pablo es conocida popularmente como 'la carta de la alegría'?", options: ["Filipenses", "Colosenses", "Filemón", "Tito"], answer: 0 },
+            { q: "¿A quién dirigió Pablo una carta personal pidiéndole que recibiera con amor al esclavo Onésimo?", options: ["A Filemón", "A Timoteo", "A Tito", "A Gayo"], answer: 0 },
+            { q: "¿Qué anónima y profunda carta del Nuevo Testamento describe a Jesucristo como Sumo Sacerdote de la Nueva Alianza?", options: ["Carta a los Hebreos", "Carta de Santiago", "Segunda de Pedro", "Judas"], answer: 0 },
+            { q: "¿Qué enseñanza central proclama la Carta de Santiago respecto a la vida cristiana?", options: ["La fe sin obras está muerta", "Solo importa el sentimiento interior", "Las obras salvan sin necesidad de Dios", "El ayuno prolongado borra todo pecado"], answer: 0 },
+            { q: "¿Qué enseña la Primera Carta de San Juan utilizando una definición luminosa sobre Dios?", options: ["Dios es amor", "Dios es fuego consumidor", "Dios es un juez severo", "Dios habita en silencio"], answer: 0 },
+            { q: "¿Qué advierten insistentemente las cartas de San Pedro y Judas frente a los peligros doctrinales?", options: ["Cuidado con los falsos maestros", "No leer textos antiguos", "No celebrar la eucaristía en casas", "Rechazar a los gobernantes civiles"], answer: 0 },
+            { q: "¿Cuál es el propósito fundamental por el cual los apóstoles escribieron estas cartas?", options: ["Para enseñar, corregir, animar y fortalecer la fe de las comunidades", "Para registrar impuestos imperiales", "Para redactar leyes civiles del imperio", "Para dejar autobiografías personales"], answer: 0 },
+            { q: "¿Qué se destaca sobre la inspiración de estas cartas en la vida de la Iglesia?", options: ["Que son Palabra de Dios inspirada por el Espíritu Santo", "Que son simples opiniones humanas", "Que solo servían para el siglo primero", "Que fueron escritas por los obispos de Roma"], answer: 0 },
+            { q: "¿Cómo complementan las Cartas a los Evangelios según la doctrina de la Iglesia?", options: ["Los Evangelios muestran quién es Jesús; las Cartas enseñan cómo vivir como sus discípulos", "Los Evangelios ya no tienen validez teológica", "Las Cartas reemplazan la vida de Jesús", "No tienen relación directa entre sí"], answer: 0 }
+        ],
+        caridad: [
+            { q: "¿Cuándo fue fundado oficialmente el Grupo Misionero SOLMAR?", options: ["El 28 de agosto de 1998", "El 7 de mayo de 1905", "El 25 de diciembre de 1990", "El 15 de agosto de 2000"], answer: 0 },
+            { q: "¿A quién rinde honor u qué significa el nombre SOLMAR?", options: ["Sor Luz María Rojas", "Solidaridad Mariana y Rescate", "Luz del Sol y del Mar", "Sociedad Misionera de la Región"], answer: 0 },
+            { q: "¿Quién escribió “La vida es bella cuando descubrimos su razón de ser en la experiencia de un Dios de amor, que nos impulsa a servir y amar desinteresadamente a nuestros hermanos más desprotegidos”?", options: ["Sor Gloria Bedoya" , "Sor Luz María Rojas", "Sor Carmen Alicia Sánchez", "Sor Celia Garcían"], answer: 0 },
+            { q: "¿Qué significa ser un misionero en el Grupo Misionero SOLMAR?", options: ["Vivir consagrados al Sagrado Corazón de Jesús, transformando la fe en acciones vivas de santidad, caridad y servicio desinteresado al prójimo", "Participar únicamente en eventos anuales de la parroquia", "Cumplir con un reglamento administrativo interno", "Viajar permanentemente a misiones internacionales"], answer: 0 },
+            { q: "¿Cómo define la Iglesia católica la caridad en su dimensión teologal?", options: ["La virtud teologal suprema para amar a Dios sobre todas las cosas y al prójimo como a uno mismo", "Una simple norma moral de buena educación", "Un impuesto obligatorio para los fieles", "Un sentimiento pasajero de afecto humano"], answer: 0 },
+            { q: "¿De dónde nace verdaderamente la auténtica caridad según la doctrina?", options: ["De la iniciativa y el primer amor de Dios Padre", "Del esfuerzo exclusivo de la voluntad humana", "De las leyes y costumbres de la sociedad", "De la filosofía de los antiguos sabios"], answer: 0 },
+            { q: "¿Qué cita del Evangelio de Juan recuerda el origen supremo del amor del Padre?", options: ["'Porque tanto amó Dios al mundo, que entregó a su Hijo único...' (Jn 3,16)", "'Nadie tiene mayor amor que este...' (Jn 15,13)", "'Yo soy el camino, la verdad y la vida' (Jn 14,6)", "'Permanezcan en mi amor' (Jn 15,9)"], answer: 0 },
+            { q: "¿Cómo se manifiesta el rostro visible de la caridad del Padre en la tierra?", options: ["A través de Jesucristo curando, perdonando y entregándose en la cruz", "Mediante decretos escritos en piedra", "A través del poder político de los reinos", "Por medio de riquezas materiales acumuladas"], answer: 0 },
+            { q: "¿Cuál es el mandamiento nuevo que Jesús entrega a sus discípulos?", options: ["'Ámense los unos a los otros como yo los he amado' (Jn 13,34)", "'Guarden estrictamente el sábado'", "'Oigan a los profetas y no teman'", "'Cumplan los sacrificios del templo'"], answer: 0 },
+            { q: "¿Cómo ejemplificó María Santísima la caridad en el pasaje de la Visitación?", options: ["Saliendo apresuradamente para ayudar a su prima Isabel", "Quedándose en oración en Nazaret sin salir", "Pidiendo honores en el pueblo", "Repartiendo monedas de oro"], answer: 0 },
+            { q: "¿Qué enseñanza práctica nos dejó María en las bodas de Caná?", options: ["'Hagan todo lo que Él les diga' (Jn 2,5)", "'Guarden vino para el final'", "'No se preocupen por los novios'", "'Compren más provisiones'"], answer: 0 },
+            { q: "¿Cómo describe san Pablo las características esenciales de la caridad en 1 Corintios 13?", options: ["La caridad es paciente, es servicial; no es envidiosa ni jactanciosa", "La caridad busca su propio beneficio y se enorgullece", "La caridad exige justicia antes de perdonar", "La caridad es severa y castiga los errores"], answer: 0 },
+            { q: "¿Cómo vincula Jesús el amor a Dios con el amor al prójimo en Mateo 25,40?", options: ["'Todo lo que hicieron con uno de estos hermanos míos más pequeños, conmigo lo hicieron'", "'Quien ora mucho ya cumple todo'", "'El templo es más importante que el necesitado'", "'La doctrina supera a la compasión'"], answer: 0 },
+            { q: "¿Qué reflexión final resume la vivencia de la caridad para un laico cristiano?", options: ["La caridad no consiste solo en dar de lo que tenemos, sino en entregar algo de lo que somos", "Dar limosna limpia cualquier culpa sin cambiar el corazón", "La caridad es exclusiva de los sacerdotes y religiosos", "Las obras sociales no importan si hay buena intención"], answer: 0 },
+            { q: "¿Qué frase de la Primera Carta de Juan sintetiza la relación entre Dios y el amor?", options: ["'Dios es amor' (1 Jn 4,8)", "'Dios es luz y no hay tinieblas'", "'Dios es un juez justo'", "'Dios habita en lo alto'"], answer: 0 },
+            { q: "¿Cómo se comportaba María al pie de la cruz en el momento más doloroso de Jesús?", options: ["Permaneció firme y unida al sacrificio de su Hijo por amor", "Se retiró por temor al soldado romano", "Cuestionó los designios del Padre", "Buscó protección en el templo"], answer: 0 }
+        ],
+        santidad: [
+            { q: "¿Qué dice el libro del Levítico (19,2) como llamado universal para los creyentes?", options: ["'Sean santos, porque yo, el Señor, su Dios, soy santo'", "'Guarden los mandamientos antiguos con rigor'", "'Ofrezcan sacrificios sin mancha en el altar'", "'Amen la tierra que les he entregado'"], answer: 0 },
+            { q: "¿Qué afirma la Primera Carta a los Tesalonicenses (4,3) sobre la voluntad de Dios?", options: ["'Esta es la voluntad de Dios: su santificación'", "'Esta es la voluntad de Dios: su riqueza material'", "'Esta es la voluntad de Dios: su poder político'", "'Esta es la voluntad de Dios: su silencio'"], answer: 0 },
+            { q: "¿De dónde nace verdaderamente la santidad de un cristiano según Juan 15,4-5?", options: ["De permanecer unidos a Jesús, porque separados de Él no podemos hacer nada", "De cumplir normas morales por esfuerzo propio", "De destacar en la comunidad por grandes obras", "De estudiar teología avanzada"], answer: 0 },
+            { q: "¿Qué conexión existe entre la espiritualidad del Sagrado Corazón y la misión de un Misionero SOLMAR?", options: ["La misión nace de la intimidad con Cristo; no podemos dar lo que no recibimos de Él", "Es un requisito administrativo del grupo", "Busca únicamente cumplir horarios de oración", "Obliga a realizar sacrificios físicos extremos"], answer: 0 },
+            { q: "¿Cuál es el corazón espiritual que nos pide Jesús al decir 'Aprendan de mí' en Mateo 11,29?", options: ["Que soy manso y humilde de corazón", "Que soy un rey poderoso y fuerte", "Que conozco todas las escrituras", "Que no tengo debilidades"], answer: 0 },
+            { q: "¿Qué gran meta de vida cristiana expresa san Pablo en Gálatas 2,20?", options: ["'Ya no vivo yo, sino que Cristo vive en mí'", "'He vencido a todos mis enemigos'", "Tengo la fuerza para gobernar a otros", "He cumplido toda la ley a la perfección"], answer: 0 },
+            { q: "¿Qué nos enseña la actitud de María en la Anunciación (Lc 1,38) para responder al llamado?", options: ["'Aquí está la esclava del Señor; hágase en mí según tu palabra'", "'Déjame pensar si tengo tiempo'", "'Prefiero cumplir solo lo necesario'", "'Busca a alguien más capacitado'"], answer: 0 },
+            { q: "¿Cuál es la secuencia espiritual que recorre María y que imita un Misionero SOLMAR?", options: ["María escucha → María acepta → María recibe a Jesús → María sale a servir", "María descansa → María enseña → María juzga → María calla", "María se aisla → María medita → María escribe → María reina", "María peregrina → María pide → María exige → María premia"], answer: 0 },
+            { q: "¿Por qué se advierte que no se puede hablar de santidad mientras se conservan resentimientos?", options: ["Porque el amor al hermano es la prueba ineludible de nuestro amor a Dios (1 Jn 4,20)", "Porque Dios no escucha a quienes tienen mal carácter", "Porque las leyes comunitarias prohíben enojarse", "Porque el orgullo quita el tiempo libre"], answer: 0 },
+            { q: "¿Qué significa concretamente la meta de un Misionero SOLMAR en su proceso de santidad?", options: ["No es solo hacer cosas por Jesús, sino permitir que Jesús viva en él", "Convertirse en director de obras sociales", "Ganar un reconocimiento eclesial", "Liderar grandes eventos multitudinarios"], answer: 0 },
+            { q: "¿Cómo se define el lema central propuesto para la espiritualidad de santidad en SOLMAR?", options: ["'LLAMADOS A LA SANTIDAD Y AL SERVICIO' consagrados al Corazón de Jesús", "'Poder, gloria y victoria en la misión'", "'Trabajo duro y disciplina estricta'", "'Silencio y retiro perpetuo en el mundo'"], answer: 0 },
+            { q: "¿Qué implica el llamado universal a la santidad para los fieles?", options: ["Que la santidad no es opcional, sino un llamado para todos los cristianos", "Que es exclusiva para sacerdotes y obispos consagrados", "Que solo se alcanza al final de la vejez", "Que es un premio para quienes hacen milagros"], answer: 0 },
+            { q: "¿Qué nos enseña Jesús al invitarnos a perdonar y amar como Él?", options: ["Que debemos aprender su estilo de vida manso, humilde y misericordioso", "Que las ofensas nunca deben olvidarse", "Que la justicia humana está por encima del perdón", "Que el amor es un sentimiento que va y viene"], answer: 0 },
+            { q: "¿Qué demuestra que un discípulo vive realmente unido a Cristo según Juan 13,35?", options: ["'Si se tienen amor los unos a los otros'", "Si recita los salmos de memoria", "Si ayuna todos los días de la semana", "Si construye grandes edificios para el culto"], answer: 0 },
+            { q: "¿Cómo transforma el encuentro con Jesús la vida cotidiana de un misionero?", options: ["Convirtiendo su rutina en un camino constante de transformación, santidad y servicio", "Eximiéndolo de las dificultades del trabajo", "Dándole privilegios sobre los demás", "Haciéndolo inmune al sufrimiento humano"], answer: 0 }
+        ],
+        servicio: [
+            { q: "¿Qué declara el Señor Jesucristo en Marcos 10,45 sobre el sentido de su venida?", options: ["'El Hijo del hombre no ha venido a ser servido, sino a servir y a dar su vida en rescate por muchos'", "'He venido a gobernar sobre todas las naciones de la tierra'", "'He venido a exigir honores y obediencia estricta'", "'He venido a fundar un imperio militar poderoso'"], answer: 0 },
+            { q: "¿Qué ejemplo concreto dejó Jesús a sus discípulos en Juan 13,15 tras realizar un acto de profunda humildad?", options: ["'Les he dado ejemplo, para que también ustedes hagan como yo he hecho con ustedes' (El lavatorio de los pies)", "'Les he enseñado a gobernar con autoridad sobre los débiles'", "'Les he dado riquezas para que vivan sin preocupaciones'", "'Les he ordenado construir templos lujosos'"], answer: 0 },
+            { q: "¿Qué pregunta clave debe hacerse un Misionero SOLMAR al examinar sus motivaciones?", options: ["¿Estamos buscando servir como Jesús o ser reconocidos por nuestro servicio?", "¿Cuántos títulos o cargos hemos acumulado en la parroquia?", "¿Cuánto tiempo libre nos queda después de la misión?", "¿Qué beneficios personales obtenemos al ayudar?"], answer: 0 },
+            { q: "¿Cómo se relaciona la figura de María en la Visitación (Lc 1,39) con la vocación de servicio?", options: ["María se levantó y se dirigió apresuradamente a la montaña para asistir a su prima Isabel", "María esperó que vinieran a pedirle favores en su casa", "María envió a otros mensajeros a solucionar el problema", "María evitó involucrarse en asuntos familiares complejos"], answer: 0 },
+            { q: "¿Cuál es el orden espiritual correcto que conduce a una verdadera misión fecunda?", options: ["ENCUENTRO CON JESÚS → TRANSFORMACIÓN → SANTIDAD → SERVICIO → MISIÓN", "MISIÓN → TRABAJO → RECONOCIMIENTO → ORACIÓN", "ESTUDIO → DISCUSIÓN → LIDERAZGO → BÚSQUEDA DE PODER", "ACCESORIOS → NORMAS → CUMPLIMIENTO → DESCANSO"], answer: 0 },
+            { q: "¿Qué significa aprender a servir como Jesús según el modelo del Sagrado Corazón?", options: ["Amar como Él, perdonar como Él, tener misericordia y entregar la vida", "Cumplir turnos obligatorios sin involucrar el corazón", "Ayudar únicamente a cambio de obediencia", "Delegar todas las cargas pesadas en los demás"], answer: 0 },
+            { q: "¿Por qué el servicio cristiano no puede basarse en la búsqueda de aplausos?", options: ["Porque el verdadero servicio nace de un corazón manso y humilde unido a Cristo", "Porque las reglas prohíben destacar en la comunidad", "Porque los aplausos cuestan dinero a la parroquia", "Porque resta puntos en la evaluación comunitaria"], answer: 0 },
+            { q: "¿Qué actitud debe tener un misionero al acompañar a los enfermos y necesitados?", options: ["Ver en ellos al propio Cristo y asistirlos con gratuidad y amor sobrenatural", "Atenderlos rápidamente para cumplir con el protocolo", "Juzgar las causas que los llevaron a esa situación", "Esperar una recompensa económica o social"], answer: 0 },
+            { q: "¿Cómo transformó María su profunda experiencia de oración y gracia en la tierra?", options: ["Convirtiéndola inmediatamente en servicio activo y generoso hacia el prójimo", "Guardándola en secreto sin compartirla con nadie", "Utilizándola para obtener autoridad sobre los apóstoles", "Retirándose a un lugar inaccesible"], answer: 0 },
+            { q: "¿Qué enseñanza deja el lavatorio de los pies para el trabajo en comunidad de SOLMAR?", options: ["Que el liderazgo cristiano se ejerce lavando los pies, es decir, sirviendo con humildad a los hermanos", "Que los líderes deben ser servidos por los más jóvenes", "Que las tareas humildes deben evitarse a toda costa", "Que el aseo del templo es la única misión importante"], answer: 0 },
+            { q: "¿Qué relación existe entre la intimidad con Jesús y la eficacia del servicio misionero?", options: ["La misión nace de la intimidad; sin permanecer en Él, nuestras obras estériles no dan fruto verdadero", "Ninguna, se puede servir bien sin rezar ni conocer a Dios", "La oración quita tiempo valioso que deberíamos usar trabajando", "Trabajar mucho compensa la falta de oración"], answer: 0 },
+            { q: "¿Cómo se evita el cansancio o la frustración en el servicio pastoral según las lecturas?", options: ["Permitiendo que Cristo viva en nosotros y sea Él quien actúe a través de nuestro apostolado", "Reduciendo al mínimo las tareas asignadas", "Exigiendo turnos rotativos obligatorios", "Buscando compensaciones humanas externas"], answer: 0 },
+            { q: "¿Qué impacto tiene el servicio realizado con amor en el entorno familiar y social?", options: ["Transforma los ambientes mediante la misericordia y la entrega desinteresada", "Genera rivalidades por ver quién trabaja más", "Obliga a los demás a cambiar por la fuerza", "Crea dependencia económica en los vecinos"], answer: 0 },
+            { q: "¿Qué significa la frase 'Ya no vivo yo, sino que Cristo vive en mí' aplicada al servicio?", options: ["Que nuestras manos, palabras y obras de servicio son los instrumentos de la presencia viva de Jesús", "Que perdemos nuestra identidad personal por completo", "Que ya no necesitamos tomar decisiones propias", "Que estamos exentos de cometer errores humanos"], answer: 0 },
+            { q: "¿Cuál es el compromiso fundamental de un Misionero SOLMAR consagrado al Sagrado Corazón?", options: ["Vivir en santidad, servir con amor y llevar eficazmente a Cristo a los demás", "Construir grandes imperios institucionales", "Defender ideologías humanas con argumentos políticos", "Aislarse del mundo para buscar la perfección individual"], answer: 0 }
+        ],
+        apocalipsis: [
+            { q: "¿Quién es el autor humano inspirado que escribió el libro del Apocalipsis?", options: ["San Juan", "San Pablo", "San Pedro", "San Lucas"], answer: 0 },
+            { q: "¿En qué isla se encontraba exiliado el autor cuando recibió estas visiones?", options: ["Patmos", "Creta", "Sicilia", "Chipre"], answer: 0 },
+            { q: "Para la fe Católica, ¿cuál es el mensaje principal del Apocalipsis?", options: ["Dar esperanza sobre la victoria de Cristo", "Predecir fechas exactas", "Causar terror", "Explicar cosmología"], answer: 0 },
+            { q: "¿Qué significa el número 7 en el libro?", options: ["Perfección y plenitud", "Mala suerte", "El tiempo restante", "Número de imperios"], answer: 0 },
+            { q: "En el capítulo 12 aparece una 'Mujer vestida de sol'. ¿A quién representa?", options: ["A la Virgen María y la Iglesia", "A María Magdalena", "A Eva", "A Santa Ana"], answer: 0 },
+            { q: "¿Quién es el 'Cordero degollado pero de pie'?", options: ["Jesucristo", "El profeta Elías", "San Miguel Arcángel", "San Juan Bautista"], answer: 0 },
+            { q: "¿A cuántas iglesias de Asia Menor se dirigen las cartas al principio?", options: ["Siete", "Tres", "Doce", "Diez"], answer: 0 },
+            { q: "¿Qué representan generalmente las 'bestias' en la interpretación católica?", options: ["Poderes del mundo que persiguen a la Iglesia", "Dinosaurios", "Apóstoles", "Enfermedades"], answer: 0 },
+            { q: "El libro menciona a los '144.000 marcados'. ¿Qué significa?", options: ["Totalidad y plenitud del pueblo de Dios", "Número exacto", "Soldados", "Edad simbólica"], answer: 0 },
+            { q: "¿Con qué invocación termina el Apocalipsis?", options: ["¡Amén, ven, Señor Jesús!", "¡Fuego del cielo!", "¡Sálvese quien pueda!", "¡El fin cerca!"], answer: 0 },
+            { q: "¿Qué ciudad celestial desciende de Dios al final del Apocalipsis?", options: ["La Nueva Jerusalén", "Babilonia", "Sión", "Belén"], answer: 0 },
+            { q: "¿Qué sellos abren los jinetes del Apocalipsis?", options: ["Los primeros cuatro sellos", "Los últimos sellos", "Las copas", "Las trompetas"], answer: 0 },
+            { q: "¿Qué criatura arrebata el rollo de manos del que está sentado en el trono?", options: ["El Cordero", "Un ángel fuerte", "Un anciano", "Un ser viviente"], answer: 0 },
+            { q: "¿Cuántos ancianos rodean el trono celestial en las visiones de Juan?", options: ["24", "12", "70", "144"], answer: 0 },
+            { q: "¿Qué representan los cuatro seres vivientes del trono?", options: ["La creación alabando a Dios", "Los cuatro jinetes", "Los imperios", "Los arcángeles"], answer: 0 }
+        ],
+        parabolas: [
+            { q: "En la parábola del Hijo Pródigo, ¿cómo recibe el padre a su hijo menor al regresar?", options: ["Lo recibe con una gran fiesta y compasión", "Lo rechaza", "Le exige multa", "Lo manda al campo"], answer: 0 },
+            { q: "¿Quién se detiene a ayudar al hombre herido en la parábola del Buen Samaritano?", options: ["Un samaritano", "Un sacerdote", "Un levita", "Un fariseo"], answer: 0 },
+            { q: "¿A qué compara Jesús el Reino de los Cielos en la parábola de la semilla más pequeña?", options: ["A un grano de mostaza", "A una semilla de trigo", "A una vid", "A una higuera"], answer: 0 },
+            { q: "En la parábola del Sembrador, ¿qué representa la semilla que cae en buena tierra?", options: ["Los que escuchan la palabra, la entienden y dan fruto", "Los olvidadizos", "Los miedosos", "Los ricos"], answer: 0 },
+            { q: "¿Qué busca con insistencia la mujer de la parábola que pierde una moneda de plata?", options: ["Una moneda", "Una oveja", "Una perla", "Un tesoro"], answer: 0 },
+            { q: "En la parábola de la oveja perdida, ¿qué representa el pastor que sale a buscarla?", options: ["La alegría en el cielo por un pecador que se arrepiente", "La justicia humana", "La dureza", "El castigo"], answer: 0 },
+            { q: "¿Qué enseñanza nos deja la parábola del Juez Inicuo y la Viuda Importuna?", options: ["La importancia de orar siempre con constancia y sin desanimarse", "No confiar en leyes", "Que los jueces son justos", "Callar"], answer: 0 },
+            { q: "En la parábola de los Talentos, ¿qué hizo el siervo que recibió un solo talento y lo enterró?", options: ["Lo guardó por miedo y no produjo nada", "Lo multiplicó", "Lo regaló", "Lo gastó"], answer: 0 },
+            { q: "¿Quiénes son invitados al banquete de bodas cuando los primeros rechazan la invitación?", options: ["Cualquier persona encontrada en los caminos, buenos y malos", "Solo reyes", "Nadie", "Sacerdotes"], answer: 0 },
+            { q: "¿Qué contraste enseña Jesús en la parábola del Fariseo y el Publicano?", options: ["El orgullo del fariseo frente a la humildad del publicano", "Que oraban igual", "Que el dinero importa", "Que no se debe ir al templo"], answer: 0 },
+            { q: "¿A qué se parece el Reino de los Cielos en la parábola de la red barredera?", options: ["A una red llena de toda clase de peces buenos y malos", "A un tesoro en el campo", "A una perla fina", "A una levadura"], answer: 0 },
+            { q: "¿Qué enseña Jesús con la parábola de los obreros de la última hora en la viña?", options: ["La generosidad y gracia soberana de Dios con todos", "Que unos deben ganar más", "Las leyes laborales", "El valor del esfuerzo físico"], answer: 0 },
+            { q: "¿Qué le sucede al hombre rico de la parábola del rico insensato tras cosechar mucho?", options: ["Pierde la vida esa misma noche", "Se vuelve sacerdote", "Reparte todo", "Viaja lejos"], answer: 0 },
+            { q: "En la parábola de los dos hijos mandados a la viña, ¿cuál cumplió la voluntad del padre?", options: ["El que dijo 'no quiero' pero luego fue", "El que dijo 'sí iré' y no fue", "Ninguno", "Ambos por igual"], answer: 0 },
+            { q: "¿Qué simboliza el aceite de las lámparas en la parábola de las diez vírgenes?", options: ["La gracia, la fe y las obras preparadas para el encuentro con el Señor", "Riqueza material", "Juventud", "Sabiduría humana"], answer: 0 }
+        ],
+        hhscc: [
+            { q: "¿Quién es el fundador del Instituto de las Hijas de los Sagrados Corazones de Jesús y de María?", options: ["El Beato Luis Variara", "Santa Teresa de Jesús", "Madre Teresa de Calcuta", "Santa Laura Montoya"], answer: 0 },
+            { q: "¿En qué lugar exacto de Colombia se fundó la congregación de las Hermanas Hijas de los Sagrados Corazones de Jesús y de María?", options: ["Agua de Dios", "Medellín", "Buga", "Popayán"], answer: 0 },
+            { q: "¿Cuál es la fecha exacta de fundación de las Hermanas Hijas de los Sagrados Corazones de Jesús y de María?", options: ["El 7 de mayo de 1905", "El 25 de diciembre de 1890", "El 8 de diciembre de 1875", "El 19 de marzo de 1880"], answer: 0 },
+            { q: "¿A qué familia religiosa pertenece las Hermanas Hijas de los Sagrados Corazones de Jesús y de María?", options: ["A la Familia Salesiana", "A la Familia Franciscana", "A la Orden Jesuita", "A los Dominicos"], answer: 0 },
+            { q: "¿Cuál era la principal población a la que inicialmente se dedicaron a atender en el lazareto?", options: ["A los enfermos de lepra y sus familias", "A los ancianos abandonados", "A los huérfanos de guerra", "A los peregrinos"], answer: 0 },
+            { q: "¿Con qué otro nombre histórico se conocía a Agua de Dios debido a su realidad sanitaria de la época?", options: ["La Ciudad del Dolor", "El Valle de la Paz", "El Refugio Sagrado", "La Colina florida"], answer: 0 },
+            { q: "¿De qué nacionalidad era el Padre Luis Variara antes de llegar como misionero a Colombia?", options: ["Italiano", "Español", "Francés", "Portugués"], answer: 0 },
+            { q: "¿A qué edad llegó el Padre Luis Variara a Colombia como joven misionero salesiano?", options: ["A los 19 años", "A los 35 años", "A los 25 años", "A los 40 años"], answer: 0 },
+            { q: "¿Qué papa beatificó al Padre Luis Variara en Roma?", options: ["Juan Pablo II", "Pío XII", "Pablo VI", "Francisco"], answer: 0 },
+            { q: "¿En qué fecha exacta fue beatificado el Padre Luis Variara?", options: ["El 14 de abril de 2002", "El 12 de octubre de 1990", "El 1 de mayo de 2010", "El 25 de diciembre de 2000"], answer: 0 },
+            { q: "¿Cuál es el carisma de las Hermanas Hijas de los Sagrados Corazones de Jesús y de María?", options: ["Carisma Salesiano Victimal", "Buenos cristianos y honrados ciudadanos", "Carisma Victimal Salesiano", "Se centra en la vida contemplativa, la oración profunda y la amistad íntima con Dios."], answer: 0 },
+            { q: "¿De cuál cita biblica proviene la frase del Beato Luis Variara (Todo viene de Dios y todo vuelve a Dios) ?", options: ["Romanos 11:36", "Mateo 25:40", "Filipenses 1:21", "1 Pedro 1:15-16", "Romanos 12:1"], answer: 0 },
+            { q: "¿Cuál es la abreviatura de las Hijas de los Sagrados Corazones de Jesús y de María?", options: ["HH.SS.CC.", "FMA", "HH.CC.SS.", "H.S.C.J.M."], answer: 0 },
+            { q: "¿Qué famoso misionero salesiano fue quien llevó a Luis Variara a trabajar a Agua de Dios?", options: ["El Padre Miguel Unia", "Don Bosco", "El Cardenal Cagliero", "El Padre Miguel Rúa."], answer: 0 },
+            { q: "¿Qué expresiones artísticas y sociales usó Luis Variara para transformar la tristeza del lazareto?", options: ["La música, la banda y el teatro", "Pintura abstracta", "Oratoria política", "Deporte extremo"], answer: 0 },
+            { q: "¿Qué palabras le susurró Don Miguel Rua a Luis Variara el día de sus votos religiosos?", options: ["¡Variara, no varíes!", "¡Sé fuerte y valiente!", "Id y evangelizad", "Camina hacia adelante"], answer: 0 }
+        ]
+    };
+
+    let playerId = null;
+    let miPuntajeSeccion = 0;
+    let currentQIndex = -1;
+    let timerInterval;
+    let segundos = 0;
+    let yaRespondio = false;
+    let preguntasPartida = [];
+    let temaActualKeySesion = null;
+    let temaActualKeyStr = "";
+    let correctasSeccion = 0;
+    let malasSeccion = 0;
+    let preguntaActualGlobal = null;
+
+    function shuffleArray(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.tagName === "INPUT") {
+                if (document.getElementById('login-screen').style.display !== 'none') {
+                    unirseAlJuego();
+                }
+            }
+        }
+    });
+
+    function unirseAlJuego() {
+        const name = document.getElementById('playerName').value.trim();
+        const integrantes = document.getElementById('playerAge').value;
+        if (!name || !integrantes) { alert("Por favor ingresa el nombre y el número de integrantes."); return; }
+
+        const searchName = name.toUpperCase();
+
+        db.ref('jugadores').once('value', (snapshot) => {
+            let foundKey = null;
+            if (snapshot.exists()) {
+                const jugadores = snapshot.val();
+                for (const key in jugadores) {
+                    if (jugadores[key].nombre && jugadores[key].nombre.trim().toUpperCase() === searchName) {
+                        foundKey = key;
+                        break;
+                    }
+                }
+            }
+
+            if (foundKey) {
+                playerId = foundKey;
+                db.ref('jugadores/' + playerId).update({ integrantes: integrantes });
+            } else {
+                const newPlayerRef = db.ref('jugadores').push();
+                playerId = newPlayerRef.key;
+                newPlayerRef.set({ nombre: name, integrantes: integrantes, puntaje: 0, secciones: {} });
+            }
+
+            db.ref('jugadores/' + playerId).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.secciones) {
+                    const summaryList = document.getElementById('summary-list');
+                    const finalSummaryList = document.getElementById('final-summary-list');
+                    summaryList.innerHTML = '';
+                    finalSummaryList.innerHTML = '';
+                    
+                    let totalGeneral = 0;
+                    let keys = Object.keys(data.secciones);
+                    
+                    if (keys.length > 0) {
+                        for (let [tKey, secObj] of Object.entries(data.secciones)) {
+                            let nombreTemaLegible = nombresTemas[tKey] || tKey;
+                            let pts = secObj.puntos || 0;
+                            let buenas = secObj.buenas || 0;
+                            let malas = secObj.malas || 0;
+                            totalGeneral += pts;
+
+                            let itemHtml = `<div class="summary-item">
+                                <b>${nombreTemaLegible}</b><br>
+                                ✅ Correctas: ${buenas} | ❌ Incorrectas: ${malas}<br>
+                                ⭐ Subtotal: <span style="color:#0056b3; font-weight:800;">${pts} pts</span>
+                            </div>`;
+                            summaryList.innerHTML += itemHtml;
+                            finalSummaryList.innerHTML += itemHtml;
+                        }
+                        document.getElementById('summary-total-pts').innerText = totalGeneral + " pts";
+                    } else {
+                        summaryList.innerHTML = '<i style="color: #666; font-size: 12px;">Aún no hay secciones completadas.</i>';
+                    }
+                }
+            });
+
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('waiting-screen').style.display = 'block';
+            document.getElementById('display-name').innerText = name;
+
+            db.ref('estadoJuego').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                if (data.estado === 'esperando') {
+                    document.getElementById('game-screen').style.display = 'none';
+                    document.getElementById('result-screen').style.display = 'none';
+                    document.getElementById('waiting-screen').style.display = 'block';
+                    document.getElementById('waiting-status-msg').innerText = "🕊️ Sección finalizada. Esperando al administrador...";
+                } 
+                else if (data.estado === 'jugando') {
+                    document.getElementById('waiting-screen').style.display = 'none';
+                    document.getElementById('result-screen').style.display = 'none';
+                    document.getElementById('game-screen').style.display = 'block';
+                    
+                    if (data.tema !== temaActualKeyStr) {
+                        temaActualKeyStr = data.tema;
+                        
+                        db.ref('jugadores/' + playerId + '/secciones/' + data.tema).once('value', (snapSec) => {
+                            let secData = snapSec.val();
+                            if(secData) {
+                                miPuntajeSeccion = secData.puntos || 0;
+                                correctasSeccion = secData.buenas || 0;
+                                malasSeccion = secData.malas || 0;
+                            } else {
+                                miPuntajeSeccion = 0;
+                                correctasSeccion = 0;
+                                malasSeccion = 0;
+                            }
+                            document.getElementById('score').innerText = miPuntajeSeccion;
+                        });
+                    }
+
+                    const nombreSeccion = nombresTemas[data.tema] || data.tema;
+                    document.getElementById('current-section-label').innerText = nombreSeccion;
+
+                    if (data.temaActualKey !== temaActualKeySesion) {
+                        temaActualKeySesion = data.temaActualKey;
+                        const bancoOriginal = bancosPreguntas[data.tema];
+                        let preguntasMezcladas = shuffleArray(bancoOriginal).map(p => {
+                            let originalOptions = [...p.options];
+                            let correctText = originalOptions[p.answer];
+                            let shuffledOptions = shuffleArray(originalOptions);
+                            let newAnswerIndex = shuffledOptions.indexOf(correctText);
+                            return { q: p.q, options: shuffledOptions, answer: newAnswerIndex };
+                        });
+                        preguntasPartida = preguntasMezcladas.slice(0, 15);
+                    }
+
+                    if (data.preguntaIndex !== currentQIndex) {
+                        currentQIndex = data.preguntaIndex;
+                        mostrarPregunta(currentQIndex);
+                    }
+                }
+                else if (data.estado === 'terminado') {
+                    document.getElementById('game-screen').style.display = 'none';
+                    document.getElementById('waiting-screen').style.display = 'none';
+                    document.getElementById('result-screen').style.display = 'block';
+                    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+
+                    db.ref('jugadores/' + playerId).once('value', (snapP) => {
+                        let pData = snapP.val();
+                        if (pData && pData.secciones) {
+                            let tot = Object.values(pData.secciones).reduce((acc, s) => acc + (s.puntos || 0), 0);
+                            document.getElementById('final-score').innerText = tot + " pts";
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    function mostrarPregunta(index) {
+        if (index >= preguntasPartida.length) return;
+        clearInterval(timerInterval);
+        segundos = 0;
+        yaRespondio = false;
+        document.getElementById('timer').innerText = "0";
+        document.getElementById('feedback-message').innerText = "";
+
+        timerInterval = setInterval(() => {
+            segundos++;
+            document.getElementById('timer').innerText = segundos;
+        }, 1000);
+
+        const preguntaActual = preguntasPartida[index];
+        preguntaActualGlobal = preguntaActual;
+
+        document.getElementById('question-text').innerText = (index + 1) + ". " + preguntaActual.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        preguntaActual.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => enviarRespuesta(i, preguntaActual.answer);
+            container.appendChild(btn);
+        });
+    }
+
+    function enviarRespuesta(elegida, correcta) {
+        if (yaRespondio) return;
+        yaRespondio = true;
+        clearInterval(timerInterval);
+        
+        document.getElementById('options-container').innerHTML = '';
+
+        if (elegida === correcta) {
+            let puntosGanados = (segundos <= 10) ? 2 : 1;
+            miPuntajeSeccion += puntosGanados;
+            correctasSeccion++;
+            document.getElementById('feedback-message').innerText = `✨ ¡Correcto! Ganaste +${puntosGanados} punto(s). ¡Excelente ritmo!`;
+        } else {
+            malasSeccion++;
+            const textoCorrecta = preguntaActualGlobal.options[correcta];
+            document.getElementById('feedback-message').innerHTML = `❌ Incorrecto. ¡Ánimo para la siguiente!<br>
+            <span style="font-size: 15px; color: #444; font-weight: 600;">La respuesta correcta era: <span style="color: #27ae60; font-weight: 800;">${textoCorrecta}</span></span>`;
+        }
+        document.getElementById('score').innerText = miPuntajeSeccion;
+
+        db.ref('estadoJuego').once('value', (snapSt) => {
+            let st = snapSt.val();
+            if (st && st.tema) {
+                let tKey = st.tema;
+                db.ref('jugadores/' + playerId + '/secciones/' + tKey).set({
+                    puntos: miPuntajeSeccion,
+                    buenas: correctasSeccion,
+                    malas: malasSeccion
+                });
+                
+                db.ref('jugadores/' + playerId + '/secciones').once('value', (snapSecs) => {
+                    let secs = snapSecs.val() || {};
+                    let totalG = Object.values(secs).reduce((acc, s) => acc + (s.puntos || 0), 0);
+                    db.ref('jugadores/' + playerId).update({ puntaje: totalG });
+                });
+            }
+        });
+    }
+
+    function salirDelJuego() {
+        if (playerId) {
+            db.ref('jugadores/' + playerId).remove();
+        }
+        location.reload();
+    }
+</script>
+</body>
+</html>
