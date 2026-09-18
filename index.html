@@ -38,6 +38,9 @@
         .option-btn.incorrect-btn:disabled { background-color: #e74c3c !important; color: white !important; border-color: #c0392b !important; opacity: 1 !important; }
 
         #topics-screen, #game-screen, #result-screen { display: none; }
+        html.restaurando-cuenta #login-screen {
+            display: none !important;
+        }
         #timer { color: #d9534f; font-weight: 800; font-size: 20px; }
         .message { font-size: 18px; font-weight: 800; color: #0056b3; margin-top: 20px; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
@@ -55,6 +58,11 @@
             navigator.serviceWorker.register('./sw.js');
         }
     </script>
+    <script>
+    if (sessionStorage.getItem('solmar_personal_playerId')) {
+        document.documentElement.classList.add('restaurando-cuenta');
+    }
+</script>
 </head>
 <body>
     
@@ -88,7 +96,170 @@
             <span>Desafío Bíblico Interactivo</span>
         </div>
     </div>
-    <h2 style="color: #003366; margin-bottom: 5px;">Hola, <span id="display-name" style="color: #e67e22;"></span></h2>
+    <h2 style="color: #003366; margin-bottom: 5px;">Hola, <span id="display-name" style="color: #e67e22;"></span>
+    </h2>
+
+    <div id="admin-tools"
+     style="
+        display:block;
+        background:linear-gradient(135deg,#f7f9fc,#eef4fa);
+        padding:14px;
+        border-radius:14px;
+        margin:12px 0 18px;
+        border:1px solid #d5e1ee;
+        box-shadow:0 3px 10px rgba(0,0,0,.06);
+     ">
+
+    <div style="
+        font-weight:800;
+        color:#003366;
+        margin-bottom:9px;
+        text-align:center;
+    ">
+        ⚙️ Administración
+    </div>
+
+    <button
+        onclick="abrirLoginAdministrador('admin.html')"
+        style="
+            background:#8e44ad;
+            margin-top:5px;
+        ">
+        ⚙️ Administración de la Aplicación
+    </button>
+
+    <button
+        onclick="abrirLoginAdministrador('trivia-en-vivo/admin.html')"
+        style="
+            background:#e67e22;
+            margin-top:8px;
+        ">
+        🎮 Administración de Trivia en Vivo
+    </button>
+
+</div>
+
+    <div id="admin-login-modal"
+     style="
+        display:none;
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.60);
+        z-index:99999;
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+     ">
+
+    <div style="
+        width:min(400px,100%);
+        background:white;
+        border-radius:18px;
+        padding:25px;
+        box-shadow:0 20px 50px rgba(0,0,0,.35);
+    ">
+
+        <h2 style="
+            text-align:center;
+            color:#003366;
+            margin-top:0;
+        ">
+            🔐 Acceso de Administrador
+        </h2>
+
+        <input
+            type="password"
+            id="admin-password"
+            placeholder="Contraseña de administrador"
+            autocomplete="current-password"
+            onkeydown="if (event.key === 'Enter') verificarAdministrador();"
+            style="
+                width:100%;
+                box-sizing:border-box;
+                margin-bottom:10px;
+            "
+        >
+
+        <button
+            onclick="verificarAdministrador()"
+            style="background:#0056b3;">
+            Ingresar
+        </button>
+
+        <button
+            onclick="abrirRecuperacionAdministrador()"
+            style="
+                background:transparent;
+                color:#0056b3;
+                box-shadow:none;
+                font-size:14px;
+            ">
+            ¿Olvidaste tu contraseña?
+        </button>
+
+        <button
+            onclick="cerrarLoginAdministrador()"
+            style="background:#777;">
+            Cancelar
+        </button>
+
+        <div id="admin-login-message"
+             style="
+                display:none;
+                margin-top:12px;
+                padding:10px;
+                border-radius:8px;
+                text-align:center;
+                font-size:14px;
+             ">
+        </div>
+
+        <!-- ============================================================
+     🔐 MODAL DE RECUPERACIÓN DE CONTRASEÑA
+     ============================================================ -->
+
+<div id="recovery-modal"
+     style="
+        display:none;
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,.65);
+        z-index:100000;
+        align-items:center;
+        justify-content:center;
+        padding:10px;
+        box-sizing:border-box;
+     ">
+
+    <div style="
+        position:relative;
+        width:min(500px,100%);
+        height:min(760px,95vh);
+        background:white;
+        border-radius:18px;
+        overflow:hidden;
+        box-shadow:0 20px 60px rgba(0,0,0,.4);
+     ">
+
+        <iframe
+            id="recovery-frame"
+            src=""
+            style="
+                width:100%;
+                height:100%;
+                border:none;
+                display:block;
+             "
+            allow="clipboard-write">
+        </iframe>
+
+    </div>
+
+</div>
+
+    </div>
+</div>
+
     <div style="background: #e8f4fd; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 2px solid #bbe1fa;">
         <h3 style="margin: 0; color: #0056b3;">🏆 Puntaje Acumulado: <span id="total-score" style="font-size: 24px;">0</span> pts</h3>
         <p style="margin: 5px 0 0 0; color: #555; font-size: 14px;">🎯 Partidas terminadas: <span id="total-completadas" style="font-weight: bold; color: #27ae60;">0</span></p>
@@ -97,6 +268,9 @@
     
     <div id="topics-list"></div>
     
+    <button onclick="irATriviaEnVivo()" style="background: #27ae60; margin-top: 15px;">
+    🎮 Trivia en Vivo</button>
+
     <button onclick="cerrarSesion()" style="background: #e74c3c; margin-top: 20px;">🚪 Cerrar Sesión</button>
 </div>
 
@@ -178,6 +352,295 @@
     }
     firebase.initializeApp({ databaseURL: "https://trivia-solmar-default-rtdb.firebaseio.com" });
     const db = firebase.database();
+
+    const RECOVERY_WEB_APP_URL =
+    "https://script.google.com/macros/s/AKfycbx6njkqYnn_fjNEKVTZ8CCqu3xDtjBatkFxVKepdELEPBAR82OC0MFLoa9Q4kTJ9VSvdg/exec";
+
+    let destinoAdministracion = "admin.html";
+
+    /*
+     * Aquí NO colocamos la contraseña.
+     * Solamente colocamos el SHA-256 de la contraseña.
+     */
+
+    function abrirLoginAdministrador(destino) {
+
+        destinoAdministracion =
+            destino === "trivia-en-vivo/admin.html"
+                ? "trivia-en-vivo/admin.html"
+                : "admin.html";
+
+        const modal = document.getElementById("admin-login-modal");
+
+        if (!modal) return;
+
+        modal.style.display = "flex";
+
+        const password =
+            document.getElementById("admin-password");
+
+        const message =
+            document.getElementById("admin-login-message");
+
+        password.value = "";
+        message.style.display = "none";
+
+        setTimeout(() => password.focus(), 100);
+    }
+
+    function cerrarLoginAdministrador() {
+
+        const modal =
+            document.getElementById("admin-login-modal");
+
+        if (modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    function abrirRecuperacionAdministrador() {
+
+    if (
+        !perfilJugador ||
+        normalizarNombre(perfilJugador.nombre || '') !== 'elias'
+    ) {
+        return;
+    }
+
+    const modal =
+        document.getElementById('recovery-modal');
+
+    const frame =
+        document.getElementById('recovery-frame');
+
+    if (!modal || !frame) {
+        console.error('No se encontró el módulo de recuperación.');
+        return;
+    }
+
+    // Ocultamos la ventana de contraseña administrativa
+    const adminModal =
+        document.getElementById('admin-login-modal');
+
+    if (adminModal) {
+        adminModal.style.display = 'none';
+    }
+
+    // Cargamos la página de recuperación dentro del programa
+    frame.src = RECOVERY_WEB_APP_URL;
+
+    modal.style.display = 'flex';
+}
+
+    
+
+    async function verificarAdministrador() {
+
+    if (
+        !perfilJugador ||
+        normalizarNombre(perfilJugador.nombre || '') !== 'elias'
+    ) {
+        return;
+    }
+
+    const password =
+        document.getElementById('admin-password').value;
+
+    const message =
+        document.getElementById('admin-login-message');
+
+    if (!password) {
+
+        message.innerText =
+            'Ingresa la contraseña.';
+
+        message.style.display = 'block';
+        message.style.background = '#fdecea';
+        message.style.color = '#c0392b';
+
+        return;
+    }
+
+    message.innerText =
+        'Verificando...';
+
+    message.style.display = 'block';
+    message.style.background = '#e8f4fd';
+    message.style.color = '#0056b3';
+
+    /*
+     * Creamos un iframe invisible.
+     * El Apps Script responderá dentro de él.
+     */
+    const iframeName =
+        'solmarAdminLoginFrame';
+
+    let iframe =
+        document.getElementById(iframeName);
+
+    if (!iframe) {
+
+        iframe =
+            document.createElement('iframe');
+
+        iframe.id = iframeName;
+        iframe.name = iframeName;
+
+        iframe.style.display = 'none';
+
+        document.body.appendChild(iframe);
+    }
+
+    const form =
+        document.createElement('form');
+
+    form.method = 'POST';
+
+    form.action =
+        RECOVERY_WEB_APP_URL;
+
+    form.target =
+        iframeName;
+
+    form.style.display = 'none';
+
+    const action =
+        document.createElement('input');
+
+    action.name = 'action';
+    action.value = 'login';
+
+    const nonce =
+        document.createElement('input');
+
+    nonce.name = 'nonce';
+    nonce.value =
+        crypto.randomUUID();
+
+    const pass =
+        document.createElement('input');
+
+    pass.name = 'password';
+    pass.value = password;
+
+    form.appendChild(action);
+    form.appendChild(nonce);
+    form.appendChild(pass);
+
+    document.body.appendChild(form);
+
+    /*
+     * Escuchamos la respuesta del Apps Script.
+     */
+    const manejarRespuesta =
+        function(event) {
+
+            if (!event.data) return;
+
+            if (
+                event.data.type !==
+                'SOLMAR_ADMIN_LOGIN_RESULT'
+            ) {
+                return;
+            }
+
+            if (
+                event.data.nonce !==
+                nonce.value
+            ) {
+                return;
+            }
+
+            window.removeEventListener(
+                'message',
+                manejarRespuesta
+            );
+
+            if (event.data.ok) {
+
+                sessionStorage.setItem(
+                    'solmar_admin_access',
+                    '1'
+                );
+
+                sessionStorage.setItem(
+                    'solmar_admin_token',
+                    event.data.token
+                );
+
+                form.remove();
+
+                window.location.href =
+                    destinoAdministracion;
+
+                return;
+            }
+
+            message.innerText =
+                event.data.message ||
+                'Contraseña incorrecta.';
+
+            message.style.display = 'block';
+            message.style.background = '#fdecea';
+            message.style.color = '#c0392b';
+
+            form.remove();
+        };
+
+    window.addEventListener(
+        'message',
+        manejarRespuesta
+    );
+
+    form.submit();
+}
+
+    // ============================================================
+// 🔐 ABRIR ADMINISTRACIÓN
+// ============================================================
+
+function entrarAdministracion(destino) {
+
+    // Solo Elías puede utilizar estos botones
+    if (
+        !perfilJugador ||
+        normalizarNombre(perfilJugador.nombre || '') !== 'elias'
+    ) {
+        return;
+    }
+
+    destinoAdministracion =
+        destino === 'trivia-en-vivo/admin.html'
+            ? 'trivia-en-vivo/admin.html'
+            : 'admin.html';
+
+    const modal =
+        document.getElementById('admin-login-modal');
+
+    if (!modal) {
+        console.error('No se encontró admin-login-modal');
+        return;
+    }
+
+    modal.style.display = 'flex';
+
+    const password =
+        document.getElementById('admin-password');
+
+    const message =
+        document.getElementById('admin-login-message');
+
+    if (password) {
+        password.value = '';
+        password.focus();
+    }
+
+    if (message) {
+        message.style.display = 'none';
+        message.innerText = '';
+    }
+}
+
 
     const nombresTemas = {
         evangelios: "Los Evangelios",
@@ -481,6 +944,16 @@ function resolverCuentaFusionada(id, jugadores) {
 }
 
 let listenerJugadorRef = null;
+function guardarSesionPersonal(id) {
+    sessionStorage.setItem('solmar_personal_playerId', id);
+    
+    if (perfilJugador) {
+        sessionStorage.setItem(
+            'solmar_personal_perfil',
+            JSON.stringify(perfilJugador)
+        );
+    }
+}
 
 function conectarPerfilJugador(id) {
     if (listenerJugadorRef) {
@@ -489,6 +962,17 @@ function conectarPerfilJugador(id) {
 
     playerId = id;
     listenerJugadorRef = db.ref('jugadores/' + playerId);
+
+    // Mostrar herramientas administrativas únicamente para la cuenta de Elías
+    const adminTools = document.getElementById('admin-tools');
+
+    if (adminTools) {
+        const esElias =
+            normalizarNombre(perfilJugador?.nombre || '') === 'elias' ||
+            id === 'elias';
+
+        adminTools.style.display = esElias ? 'block' : 'none';
+    }
 
     listenerJugadorRef.on('value', (snapJugador) => {
         const datos = snapJugador.val();
@@ -503,6 +987,25 @@ function conectarPerfilJugador(id) {
 
         perfilJugador = datos;
 
+        // ============================================================
+// 🔐 MOSTRAR ADMINISTRACIÓN SOLO A ELÍAS
+// ============================================================
+const adminTools = document.getElementById('admin-tools');
+
+if (adminTools) {
+
+    const nombre = normalizarNombre(
+        perfilJugador.nombre || ''
+    );
+
+    const esElias =
+        nombre === 'elias' ||
+        playerId === 'elias';
+
+    adminTools.style.display =
+        esElias ? 'block' : 'none';
+}
+
         // MUY IMPORTANTE: mostrar siempre el nombre oficial guardado en Firebase,
         // no el texto que la persona escribió al entrar.
         document.getElementById('display-name').innerText = perfilJugador.nombre || 'Jugador';
@@ -510,6 +1013,38 @@ function conectarPerfilJugador(id) {
         renderizarPantallaTemas();
     });
 }
+
+function restaurarCuentaPersonal() {
+    const idGuardado = sessionStorage.getItem('solmar_personal_playerId');
+
+    if (!idGuardado) {
+        return;
+    }
+
+    db.ref('jugadores/' + idGuardado).once('value')
+        .then((snapshot) => {
+            const datos = snapshot.val();
+
+            if (!datos) {
+                sessionStorage.removeItem('solmar_personal_playerId');
+                document.documentElement.classList.remove('restaurando-cuenta');
+                return;
+            }
+
+            conectarPerfilJugador(idGuardado);
+
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('topics-screen').style.display = 'block';
+
+            document.documentElement.classList.remove('restaurando-cuenta');
+        })
+        .catch((error) => {
+            console.error('Error restaurando la cuenta:', error);
+            document.documentElement.classList.remove('restaurando-cuenta');
+        });
+}
+
+document.addEventListener('DOMContentLoaded', restaurarCuentaPersonal);
 
 function buscarCuentaParaIngresar(jugadores, rawName) {
     const idHistorico = idNombreHistorico(rawName);
@@ -601,6 +1136,7 @@ function iniciarSesion() {
 
             db.ref('jugadores/' + playerId).update(updates)
                 .then(() => {
+                    guardarSesionPersonal(playerId);
                     conectarPerfilJugador(playerId);
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('topics-screen').style.display = 'block';
@@ -638,6 +1174,7 @@ function iniciarSesion() {
 
         db.ref('jugadores/' + nuevoId).set(nuevaCuenta)
             .then(() => {
+                guardarSesionPersonal(nuevoId);
                 conectarPerfilJugador(nuevoId);
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('topics-screen').style.display = 'block';
@@ -849,10 +1386,67 @@ function iniciarSesion() {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
 
+    function irATriviaEnVivo() {
+    if (playerId && perfilJugador) {
+        sessionStorage.setItem('solmar_personal_playerId', playerId);
+        sessionStorage.setItem('solmar_personal_perfil', JSON.stringify(perfilJugador));
+    }
+
+    window.location.href = 'trivia-en-vivo/index.html';
+    }
+
     function cerrarSesion() {
-        db.ref('jugadores/' + playerId).off();
+        sessionStorage.removeItem('solmar_personal_playerId');
+        sessionStorage.removeItem('solmar_personal_perfil');
+        sessionStorage.removeItem('solmar_admin_access');
+
+        if (listenerJugadorRef) {
+            listenerJugadorRef.off();
+        }
+
         location.reload();
     }
+    
+    window.addEventListener('message', function(event) {
+
+    if (!event.data) {
+        return;
+    }
+
+    if (
+        event.data.type !==
+        'SOLMAR_RECOVERY_CLOSE'
+    ) {
+        return;
+    }
+
+    const modal =
+        document.getElementById('recovery-modal');
+
+    const frame =
+        document.getElementById('recovery-frame');
+
+    if (modal) {
+        modal.style.display = 'none';
+    }
+
+    if (frame) {
+        frame.src = '';
+    }
+
+    /*
+     * También cerramos la ventana de contraseña
+     * administrativa por si todavía estuviera visible.
+     */
+    const adminModal =
+        document.getElementById('admin-login-modal');
+
+    if (adminModal) {
+        adminModal.style.display = 'none';
+    }
+
+});
+
 </script>
 </body>
 </html>
