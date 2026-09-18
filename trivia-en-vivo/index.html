@@ -122,6 +122,8 @@
     <input type="text" id="playerName" placeholder="Nombre del Equipo" required>
     <input type="number" id="playerAge" placeholder="Número de integrantes en el equipo" required min="1">
     <button onclick="unirseAlJuego()">Unirme al Desafío</button>
+    <button onclick="volverACuentaPersonal()" style="background:#27ae60;">
+    👤 Volver a mi cuenta personal</button>
 </div>
 
 <div class="container" id="waiting-screen">
@@ -146,6 +148,9 @@
         </div>
     </div>
     <button onclick="salirDelJuego()" style="background: #e74c3c; margin-top: 20px;">🚪 Salir del Juego</button>
+    <button onclick="volverACuentaPersonal()" style="background:#27ae60;">
+    👤 Volver a mi cuenta personal
+</button>
 </div>
 
 <div class="container" id="game-screen">
@@ -187,6 +192,9 @@
         <div id="final-summary-list"></div>
     </div>
     <button onclick="salirDelJuego()" style="background: #e74c3c; margin-top: 20px;">🚪 Salir del Juego</button>
+    <button onclick="volverACuentaPersonal()" style="background:#27ae60;">
+    👤 Volver a mi cuenta personal
+</button>
 </div>
 
 <script>
@@ -608,6 +616,9 @@
             db.ref('jugadores/' + playerId).remove();
         }
         location.reload();
+    }
+    function volverACuentaPersonal() {
+        window.location.href = '../index.html';
     }
 </script>
 </body>
