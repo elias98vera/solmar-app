@@ -111,7 +111,7 @@
 <div class="container" id="login-screen">
     <div class="solmar-header">
         <div class="solmar-logo">
-            <img src="Logo.png" alt="Logo Solmar">
+            <img src="logo.png" alt="Logo Solmar">
         </div>
         <div class="header-text">
             <h2>GRUPO MISIONERO SOLMAR</h2>
@@ -129,7 +129,7 @@
 <div class="container" id="waiting-screen">
     <div class="solmar-header">
         <div class="solmar-logo">
-            <img src="Logo.png" alt="Logo Solmar">
+            <img src="logo.png" alt="Logo Solmar">
         </div>
         <div class="header-text">
             <h2>GRUPO MISIONERO SOLMAR</h2>
@@ -175,7 +175,7 @@
 <div class="container" id="result-screen">
     <div class="solmar-header">
         <div class="solmar-logo">
-            <img src="Logo.png" alt="Logo Solmar">
+            <img src="logo.png" alt="Logo Solmar">
         </div>
         <div class="header-text">
             <h2>GRUPO MISIONERO SOLMAR</h2>
@@ -210,8 +210,8 @@
         servicio: "El Servicio",
         apocalipsis: "El Apocalipsis",
         parabolas: "Parábolas de Jesús",
-        hhscc: "Hijas de los Sagrados Corazones de Jesús y de María"
-        misa: "El comportamiento en la Santa Misa"
+        hhscc: "Hijas de los Sagrados Corazones de Jesús y de María",
+        misa: "El comportamiento en la Santa Misa",
         ritos: "Ritos Católicos"
     };
 
@@ -370,9 +370,10 @@
             { q: "¿Qué famoso misionero salesiano fue quien llevó a Luis Variara a trabajar a Agua de Dios?", options: ["El Padre Miguel Unia", "Don Bosco", "El Cardenal Cagliero", "El Padre Miguel Rúa."], answer: 0 },
             { q: "¿Qué expresiones artísticas y sociales usó Luis Variara para transformar la tristeza del lazareto?", options: ["La música, la banda y el teatro", "Pintura abstracta", "Oratoria política", "Deporte extremo"], answer: 0 },
             { q: "¿Qué palabras le susurró Don Miguel Rua a Luis Variara el día de sus votos religiosos?", options: ["¡Variara, no varíes!", "¡Sé fuerte y valiente!", "Id y evangelizad", "Camina hacia adelante"], answer: 0 }
-        ]
+        ],
 
-        misa: [
+
+         misa: [
             {
                 q: "¿Qué debemos hacer al entrar al templo antes de la Santa Misa?",
                 options: ["Conversar con los demás", "Mantener una actitud de respeto y silencio", "Usar el teléfono", "Comer algo"], answer: 1},
@@ -650,7 +651,7 @@
                 answer: 2
             }
         ]
-        
+
     };
 
     let playerId = null;
@@ -686,65 +687,95 @@
         }
     });
 
-    function unirseAlJuego() {
-        const name = document.getElementById('playerName').value.trim();
-        const integrantes = document.getElementById('playerAge').value;
-        if (!name || !integrantes) { alert("Por favor ingresa el nombre y el número de integrantes."); return; }
+    async function unirseAlJuego() {
+        const nameEl = document.getElementById('playerName');
+        const integrantesEl = document.getElementById('playerAge');
+        const name = (nameEl?.value || '').trim();
+        const integrantes = parseInt(integrantesEl?.value || '', 10);
 
-        const searchName = name.toUpperCase();
+        if (!name) {
+            alert("Por favor ingresa el nombre de tu equipo.");
+            nameEl?.focus();
+            return;
+        }
 
-        db.ref('jugadores').once('value', (snapshot) => {
+        if (!Number.isInteger(integrantes) || integrantes < 1) {
+            alert("Por favor ingresa un número válido de integrantes.");
+            integrantesEl?.focus();
+            return;
+        }
+
+        const joinButton = document.querySelector('#login-screen button[onclick="unirseAlJuego()"]');
+        if (joinButton) {
+            joinButton.disabled = true;
+            joinButton.textContent = "⏳ Conectando...";
+        }
+
+        try {
+            const snapshot = await db.ref('jugadores').once('value');
             let foundKey = null;
-            if (snapshot.exists()) {
-                const jugadores = snapshot.val();
-                for (const key in jugadores) {
-                    if (jugadores[key].nombre && jugadores[key].nombre.trim().toUpperCase() === searchName) {
-                        foundKey = key;
-                        break;
-                    }
+            const searchName = name.toUpperCase();
+            const jugadores = snapshot.val() || {};
+
+            for (const key in jugadores) {
+                const jugador = jugadores[key];
+                if (jugador && jugador.nombre && String(jugador.nombre).trim().toUpperCase() === searchName) {
+                    foundKey = key;
+                    break;
                 }
             }
 
             if (foundKey) {
                 playerId = foundKey;
-                db.ref('jugadores/' + playerId).update({ integrantes: integrantes });
+                await db.ref('jugadores/' + playerId).update({ integrantes });
             } else {
                 const newPlayerRef = db.ref('jugadores').push();
                 playerId = newPlayerRef.key;
-                newPlayerRef.set({ nombre: name, integrantes: integrantes, puntaje: 0, secciones: {} });
+                await newPlayerRef.set({
+                    nombre: name,
+                    integrantes,
+                    puntaje: 0,
+                    secciones: {}
+                });
             }
 
-            db.ref('jugadores/' + playerId).on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data && data.secciones) {
-                    const summaryList = document.getElementById('summary-list');
-                    const finalSummaryList = document.getElementById('final-summary-list');
-                    summaryList.innerHTML = '';
-                    finalSummaryList.innerHTML = '';
-                    
-                    let totalGeneral = 0;
-                    let keys = Object.keys(data.secciones);
-                    
-                    if (keys.length > 0) {
-                        for (let [tKey, secObj] of Object.entries(data.secciones)) {
-                            let nombreTemaLegible = nombresTemas[tKey] || tKey;
-                            let pts = secObj.puntos || 0;
-                            let buenas = secObj.buenas || 0;
-                            let malas = secObj.malas || 0;
-                            totalGeneral += pts;
+            // Conservamos intacta la sesión de la cuenta personal para que
+            // "Volver a mi cuenta personal" pueda restaurarla al regresar.
+            sessionStorage.setItem('solmar_live_playerId', playerId);
 
-                            let itemHtml = `<div class="summary-item">
-                                <b>${nombreTemaLegible}</b><br>
-                                ✅ Correctas: ${buenas} | ❌ Incorrectas: ${malas}<br>
-                                ⭐ Subtotal: <span style="color:#0056b3; font-weight:800;">${pts} pts</span>
-                            </div>`;
-                            summaryList.innerHTML += itemHtml;
-                            finalSummaryList.innerHTML += itemHtml;
-                        }
-                        document.getElementById('summary-total-pts').innerText = totalGeneral + " pts";
-                    } else {
-                        summaryList.innerHTML = '<i style="color: #666; font-size: 12px;">Aún no hay secciones completadas.</i>';
+            db.ref('jugadores/' + playerId).on('value', (snapshotJugador) => {
+                const data = snapshotJugador.val();
+                if (!data) return;
+
+                const summaryList = document.getElementById('summary-list');
+                const finalSummaryList = document.getElementById('final-summary-list');
+                summaryList.innerHTML = '';
+                finalSummaryList.innerHTML = '';
+
+                let totalGeneral = 0;
+                const secciones = data.secciones || {};
+                const keys = Object.keys(secciones);
+
+                if (keys.length > 0) {
+                    for (const [tKey, secObj] of Object.entries(secciones)) {
+                        const nombreTemaLegible = nombresTemas[tKey] || tKey;
+                        const pts = secObj?.puntos || 0;
+                        const buenas = secObj?.buenas || 0;
+                        const malas = secObj?.malas || 0;
+                        totalGeneral += pts;
+
+                        const itemHtml = `<div class="summary-item">
+                            <b>${nombreTemaLegible}</b><br>
+                            ✅ Correctas: ${buenas} | ❌ Incorrectas: ${malas}<br>
+                            ⭐ Subtotal: <span style="color:#0056b3; font-weight:800;">${pts} pts</span>
+                        </div>`;
+                        summaryList.innerHTML += itemHtml;
+                        finalSummaryList.innerHTML += itemHtml;
                     }
+                    document.getElementById('summary-total-pts').innerText = totalGeneral + " pts";
+                } else {
+                    summaryList.innerHTML = '<i style="color: #666; font-size: 12px;">Aún no hay secciones completadas.</i>';
+                    document.getElementById('summary-total-pts').innerText = "0 pts";
                 }
             });
 
@@ -752,8 +783,13 @@
             document.getElementById('waiting-screen').style.display = 'block';
             document.getElementById('display-name').innerText = name;
 
-            db.ref('estadoJuego').on('value', (snapshot) => {
-                const data = snapshot.val();
+            // Evitamos duplicar listeners de estado si el usuario vuelve a entrar.
+            if (window.solmarEstadoJuegoListener) {
+                db.ref('estadoJuego').off('value', window.solmarEstadoJuegoListener);
+            }
+
+            window.solmarEstadoJuegoListener = (snapshotEstado) => {
+                const data = snapshotEstado.val();
                 if (!data) return;
 
                 if (data.estado === 'esperando') {
@@ -761,18 +797,23 @@
                     document.getElementById('result-screen').style.display = 'none';
                     document.getElementById('waiting-screen').style.display = 'block';
                     document.getElementById('waiting-status-msg').innerText = "🕊️ Sección finalizada. Esperando al administrador...";
-                } 
+                }
                 else if (data.estado === 'jugando') {
                     document.getElementById('waiting-screen').style.display = 'none';
                     document.getElementById('result-screen').style.display = 'none';
                     document.getElementById('game-screen').style.display = 'block';
-                    
+
+                    if (!bancosPreguntas[data.tema] || bancosPreguntas[data.tema].length === 0) {
+                        document.getElementById('feedback-message').innerText = "⚠️ No se encontraron preguntas para esta sección.";
+                        return;
+                    }
+
                     if (data.tema !== temaActualKeyStr) {
                         temaActualKeyStr = data.tema;
-                        
+
                         db.ref('jugadores/' + playerId + '/secciones/' + data.tema).once('value', (snapSec) => {
-                            let secData = snapSec.val();
-                            if(secData) {
+                            const secData = snapSec.val();
+                            if (secData) {
                                 miPuntajeSeccion = secData.puntos || 0;
                                 correctasSeccion = secData.buenas || 0;
                                 malasSeccion = secData.malas || 0;
@@ -791,14 +832,15 @@
                     if (data.temaActualKey !== temaActualKeySesion) {
                         temaActualKeySesion = data.temaActualKey;
                         const bancoOriginal = bancosPreguntas[data.tema];
-                        let preguntasMezcladas = shuffleArray(bancoOriginal).map(p => {
-                            let originalOptions = [...p.options];
-                            let correctText = originalOptions[p.answer];
-                            let shuffledOptions = shuffleArray(originalOptions);
-                            let newAnswerIndex = shuffledOptions.indexOf(correctText);
+                        const preguntasMezcladas = shuffleArray(bancoOriginal).map(p => {
+                            const originalOptions = [...p.options];
+                            const correctText = originalOptions[p.answer];
+                            const shuffledOptions = shuffleArray(originalOptions);
+                            const newAnswerIndex = shuffledOptions.indexOf(correctText);
                             return { q: p.q, options: shuffledOptions, answer: newAnswerIndex };
                         });
                         preguntasPartida = preguntasMezcladas.slice(0, 15);
+                        currentQIndex = -1;
                     }
 
                     if (data.preguntaIndex !== currentQIndex) {
@@ -813,15 +855,29 @@
                     confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
 
                     db.ref('jugadores/' + playerId).once('value', (snapP) => {
-                        let pData = snapP.val();
+                        const pData = snapP.val();
                         if (pData && pData.secciones) {
-                            let tot = Object.values(pData.secciones).reduce((acc, s) => acc + (s.puntos || 0), 0);
+                            const tot = Object.values(pData.secciones).reduce((acc, sec) => acc + (sec.puntos || 0), 0);
                             document.getElementById('final-score').innerText = tot + " pts";
                         }
                     });
                 }
+            };
+
+            db.ref('estadoJuego').on('value', window.solmarEstadoJuegoListener, (error) => {
+                console.error('Error leyendo estadoJuego:', error);
+                alert('No se pudo escuchar la partida en vivo. Revisa tu conexión o las reglas de Firebase.');
             });
-        });
+
+        } catch (error) {
+            console.error('Error al unirse a la Trivia en Vivo:', error);
+            alert('No se pudo ingresar a la Trivia en Vivo.\n\n' + (error?.message || 'Verifica tu conexión a internet y la configuración de Firebase.'));
+        } finally {
+            if (joinButton) {
+                joinButton.disabled = false;
+                joinButton.textContent = "Unirme al Desafío";
+            }
+        }
     }
 
     function mostrarPregunta(index) {
@@ -894,13 +950,38 @@
     }
 
     function salirDelJuego() {
-        if (playerId) {
-            db.ref('jugadores/' + playerId).remove();
+        if (window.solmarEstadoJuegoListener) {
+            db.ref('estadoJuego').off('value', window.solmarEstadoJuegoListener);
+            window.solmarEstadoJuegoListener = null;
         }
+        if (playerId) {
+            db.ref('jugadores/' + playerId).remove().catch((error) => {
+                console.error('Error eliminando jugador:', error);
+            });
+        }
+        sessionStorage.removeItem('solmar_live_playerId');
         location.reload();
     }
     function volverACuentaPersonal() {
-        window.location.href = '../index.html';
+        clearInterval(timerInterval);
+
+        // Mantener intacta la sesión de la cuenta personal.
+        const personalId = sessionStorage.getItem('solmar_personal_playerId');
+        const personalPerfil = sessionStorage.getItem('solmar_personal_perfil');
+        if (personalId) sessionStorage.setItem('solmar_personal_playerId', personalId);
+        if (personalPerfil) sessionStorage.setItem('solmar_personal_perfil', personalPerfil);
+
+        // Detener listeners propios de la Trivia en Vivo.
+        if (window.solmarEstadoJuegoListener) {
+            db.ref('estadoJuego').off('value', window.solmarEstadoJuegoListener);
+            window.solmarEstadoJuegoListener = null;
+        }
+        if (playerId) {
+            db.ref('jugadores/' + playerId).off();
+        }
+
+        // Desde /trivia-en-vivo/ volver siempre al index principal del sitio.
+        window.location.href = new URL('../index.html', window.location.href).href;
     }
 </script>
 </body>
