@@ -7,6 +7,18 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script>
+(function () {
+
+    const acceso =
+        sessionStorage.getItem('solmar_admin_access');
+
+    if (acceso !== '1') {
+        window.location.replace('../index.html');
+    }
+
+})();
+</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
         body { font-family: 'Poppins', sans-serif; background-color: #003366; color: white; padding: 20px; }
@@ -70,6 +82,12 @@
             <span style="color: #f1c40f; font-style: italic; font-size: 13px;">Sor Luz María Rojas — Panel de Administrador</span>
         </div>
     </div>
+
+    <button
+        onclick="volverACuentaPersonal()"
+        style="background:#27ae60; padding:10px 12px; font-size:13px; white-space:nowrap;">
+        👤 Mi cuenta
+    </button>
 
     <div id="winner-announcement" class="winner-banner">
         🎉 ¡Felicidades al Gran Ganador del Desafío! 🏆<br>
@@ -260,6 +278,10 @@
             confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
         }, 250);
     }
+    function volverACuentaPersonal() {
+        sessionStorage.removeItem('solmar_admin_access');
+    window.location.href = '../index.html';
+}
 </script>
 </body>
 </html>
