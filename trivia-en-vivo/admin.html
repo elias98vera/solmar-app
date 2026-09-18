@@ -49,7 +49,7 @@
         .solmar-logo img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
         }
         .header-text {
             flex-grow: 1;
@@ -75,7 +75,7 @@
 <div class="panel">
     <div class="solmar-header">
         <div class="solmar-logo">
-            <img src="Logo.png" alt="Logo Solmar">
+            <img src="logo.png" alt="Logo Solmar">
         </div>
         <div class="header-text">
             <h2 style="margin: 0; font-size: 18px; font-weight: 800;">GRUPO MISIONERO SOLMAR</h2>
@@ -140,8 +140,8 @@
         servicio: "El Servicio",
         apocalipsis: "El Apocalipsis",
         parabolas: "Parábolas de Jesús",
-        hhscc: "Hijas de los Sagrados Corazones de Jesús y de María"
-        misa: "El comportamiento en la Santa Misa"
+        hhscc: "Hijas de los Sagrados Corazones de Jesús y de María",
+        misa: "El comportamiento en la Santa Misa",
         ritos: "Ritos Católicos"
     };
 
@@ -190,23 +190,34 @@
         });
     });
 
-    function iniciarJuego(tema) {
+    async function iniciarJuego(tema) {
+        if (!nombresTemas[tema]) {
+            alert('La sección seleccionada no existe.');
+            return;
+        }
+
         temaActual = tema;
         indicePregunta = 0;
         document.getElementById('winner-announcement').style.display = 'none';
-        
+
         const sesionKey = Date.now();
-        db.ref('estadoJuego').set({ 
-            estado: 'jugando', 
-            tema: tema, 
-            temaActualKey: sesionKey,
-            preguntaIndex: indicePregunta 
-        });
-        
-        document.getElementById('controles-inicio').style.display = 'none';
-        document.getElementById('controles-juego').style.display = 'block';
-        document.getElementById('admin-active-section').innerText = nombresTemas[tema] || tema;
-        document.getElementById('estado-actual').innerText = `Pregunta 1 de ${totalPreguntasPartida} en pantalla.`;
+
+        try {
+            await db.ref('estadoJuego').set({
+                estado: 'jugando',
+                tema: tema,
+                temaActualKey: sesionKey,
+                preguntaIndex: indicePregunta
+            });
+
+            document.getElementById('controles-inicio').style.display = 'none';
+            document.getElementById('controles-juego').style.display = 'block';
+            document.getElementById('admin-active-section').innerText = nombresTemas[tema];
+            document.getElementById('estado-actual').innerText = `Pregunta 1 de ${totalPreguntasPartida} en pantalla.`;
+        } catch (error) {
+            console.error('Error iniciando partida:', error);
+            alert('No se pudo iniciar la partida en Firebase.\n\n' + (error?.message || 'Verifica tu conexión y las reglas de Firebase.'));
+        }
     }
 
     function siguientePregunta() {
@@ -284,8 +295,9 @@
     }
     function volverACuentaPersonal() {
         sessionStorage.removeItem('solmar_admin_access');
-    window.location.href = '../index.html';
-}
+        const destino = new URL('../index.html', window.location.href).href;
+        window.location.href = destino;
+    }
 </script>
 </body>
 </html>
