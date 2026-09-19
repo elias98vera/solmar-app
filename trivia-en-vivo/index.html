@@ -211,8 +211,8 @@
         apocalipsis: "El Apocalipsis",
         parabolas: "Parábolas de Jesús",
         hhscc: "Hijas de los Sagrados Corazones de Jesús y de María",
-        misa: "El comportamiento en la Santa Misa",
-        ritos: "Ritos Católicos"
+        misa: "La Santa Misa y sus principales ritos",
+        ritos: "Próximamente"
     };
 
     const bancosPreguntas = {
@@ -374,134 +374,171 @@
 
 
          misa: [
-            {
-                q: "¿Qué debemos hacer al entrar al templo antes de la Santa Misa?",
-                options: ["Conversar con los demás", "Mantener una actitud de respeto y silencio", "Usar el teléfono", "Comer algo"], answer: 1},
-            {
-                q: "¿Qué hacemos al entrar a una iglesia y pasar frente al Santísimo Sacramento?", options: ["Aplaudimos", "Nos arrodillamos o hacemos una reverencia según corresponda", "Saludamos con la mano", "Nos sentamos inmediatamente"], answer: 1},
-            {
-                q: "Durante la proclamación del Evangelio, ¿cuál es la postura habitual?",options: ["Sentados", "Arrodillados", "De pie", "Caminando"], answer: 2},
-            {
-                q: "¿Qué actitud debemos mantener durante las lecturas de la Misa?",
-                options: [
-                    "Prestar atención y escuchar con respeto",
-                    "Conversar en voz baja",
-                    "Revisar el celular",
-                    "Salir del templo"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Cuándo se debe evitar conversar durante la Misa?",
-                options: [
-                    "Solamente durante el Evangelio",
-                    "Solamente durante la comunión",
-                    "Durante toda la celebración",
-                    "Solamente al final"
-                ],
-                answer: 2
-            },
-            {
-                q: "¿Qué hacemos cuando comienza la procesión de entrada?",
-                options: [
-                    "Permanecemos atentos y participamos con respeto",
-                    "Salimos del templo",
-                    "Conversamos",
-                    "Aplaudimos continuamente"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Qué hacemos durante las oraciones de la Santa Misa?",
-                options: [
-                    "Participamos con atención y recogimiento",
-                    "Conversamos",
-                    "Caminamos por el templo",
-                    "Utilizamos el teléfono"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Cómo debemos acercarnos a recibir la Sagrada Comunión?",
-                options: [
-                    "Corriendo",
-                    "En actitud de oración y respeto",
-                    "Conversando",
-                    "Empujando a otros"
-                ],
-                answer: 1
-            },
-            {
-                q: "Después de recibir la Comunión, ¿qué es apropiado hacer?",
-                options: [
-                    "Regresar respetuosamente al lugar y permanecer en oración",
-                    "Salir inmediatamente",
-                    "Conversar con otra persona",
-                    "Comer"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Qué debemos hacer con el teléfono celular durante la Misa?",
-                options: [
-                    "Tenerlo con el volumen alto",
-                    "Usarlo para conversar",
-                    "Mantenerlo en silencio y evitar distracciones",
-                    "Jugar"
-                ],
-                answer: 2
-            },
-            {
-                q: "¿Cuál es una actitud adecuada durante toda la celebración?",
-                options: [
-                    "Respeto, atención y participación",
-                    "Distracción",
-                    "Conversación constante",
-                    "Indiferencia"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Qué debemos hacer cuando la comunidad se pone de pie?",
-                options: [
-                    "Seguir la postura indicada para participar en la celebración",
-                    "Salir del templo",
-                    "Acostarnos",
-                    "Comenzar a conversar"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Por qué es importante evitar conversaciones innecesarias durante la Misa?",
-                options: [
-                    "Para mantener un ambiente de oración y respeto",
-                    "Para terminar más rápido",
-                    "Para escuchar música",
-                    "Para evitar sentarse"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Qué debemos hacer durante la homilía?",
-                options: [
-                    "Escuchar con atención y reflexión",
-                    "Conversar",
-                    "Dormir",
-                    "Utilizar redes sociales"
-                ],
-                answer: 0
-            },
-            {
-                q: "¿Cuál es la mejor forma de vivir la Santa Misa?",
-                options: [
-                    "Como espectadores",
-                    "Con participación activa, fe, respeto y oración",
-                    "Conversando con los amigos",
-                    "Solamente observando al sacerdote"
-                ],
-                answer: 1
-            }
+    {
+        q: "¿Cómo se clasifica la Santa Misa?",
+        options: [
+            "En dos: Liturgia de la Palabra y Liturgia Eucarística.",
+            "En tres: Ritos iniciales, Liturgia de la Palabra y Rito de despedida.",
+            "En cuatro: Ritos iniciales, Liturgia de la Palabra, Liturgia Eucarística y Ritos finales.",
+            "En cinco: Entrada, Lecturas, Ofertorio, Comunión y Salida."
         ],
+        answer: 2
+    },
+
+    {
+        q: "¿Qué se realiza principalmente durante la Liturgia de la Palabra?",
+        options: [
+            "La consagración del pan y del vino.",
+            "Primera y Segunda Lectura, el Salmo, el Evangelio y la Homilía.",
+            "La distribución de la Comunión.",
+            "La exposición del Santísimo Sacramento."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "Al finalizar la Primera y la Segunda Lectura, ¿qué responde la asamblea?",
+        options: [
+            "Gloria a Ti, Señor Jesús.",
+            "Te alabamos, Señor.",
+            "Amén, Señor.",
+            "Te damos gracias, Señor."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Qué responde la asamblea al terminar la proclamación del Evangelio?",
+        options: [
+            "Te alabamos, Señor.",
+            "Gloria al Padre, al Hijo y al Espíritu Santo.",
+            "Gloria a Ti, Señor Jesús.",
+            "Amén, amén."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cómo se llama el gesto de llevar la mano a la frente, al pecho y a ambos hombros diciendo «En el nombre del Padre, y del Hijo, y del Espíritu Santo»?",
+        options: [
+            "Signarse.",
+            "Persignarse.",
+            "Genuflexionarse.",
+            "Santiguarse."
+        ],
+        answer: 3
+    },
+
+    {
+        q: "¿Qué significa signarse?",
+        options: [
+            "Hacer una pequeña cruz únicamente sobre los labios.",
+            "Hacer tres pequeñas cruces: una en la frente, otra en los labios y otra en el pecho diciendo «Por la señal de la Santa Cruz, de nuestros enemigos líbranos, Señor, Dios nuestro».",
+            "Hacer tres inclinaciones ante el altar.",
+            "Llevar la mano a la frente, al pecho y a ambos hombros diciendo «En el nombre del Padre, y del Hijo, y del Espíritu Santo»."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Cómo se llama el gesto de doblar rodilla hasta tocar el suelo ante el Santísimo Sacramento?",
+        options: [
+            "Genuflexión simple.",
+            "Inclinación.",
+            "Genuflexión doble.",
+            "Reverencia."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cuándo se realiza normalmente la genuflexión durante la Misa?",
+        options: [
+            "Cada vez que comienza una lectura.",
+            "Ante el Santísimo Sacramento, cuando corresponde según las normas litúrgicas.",
+            "Cada vez que se escucha el nombre de Jesús.",
+            "Antes de sentarse después de la homilía."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Qué significa PERSIGNARSE?",
+        options: [
+            "Hacer únicamente una cruz sobre el pecho.",
+            "Hacer únicamente las tres cruces en la frente, labios y pecho.",
+            "Realizar conjuntamente el signo de santiguarse y signarse.",
+            "Arrodillarse con ambas rodillas ante el Santísimo."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cómo se llama el cambio de las sustancias del pan y del vino en el Cuerpo y la Sangre de Cristo durante la consagración?",
+        options: [
+            "Encarnación.",
+            "Transfiguración.",
+            "Transubstanciación.",
+            "Resurrección."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿En qué momento de la Santa Misa ocurre la consagración?",
+        options: [
+            "Durante el acto penitencial.",
+            "Durante la Liturgia de la Palabra.",
+            "Dentro de la Plegaria Eucarística, cuando el sacerdote pronuncia las palabras de la institución.",
+            "Durante el rito de despedida."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cuándo debe ponerse de pie normalmente la asamblea durante la Santa Misa?",
+        options: [
+            "Durante la proclamación del Evangelio, el Credo, la oración de los fieles y otros momentos establecidos por la liturgia.",
+            "Únicamente durante la Comunión.",
+            "Solamente cuando entra el sacerdote.",
+            "Nunca durante las lecturas."
+        ],
+        answer: 0
+    },
+
+    {
+        q: "¿En qué momento se arrodilla normalmente la asamblea durante la Plegaria Eucarística?",
+        options: [
+            "Durante toda la Liturgia de la Palabra.",
+            "Durante la consagración, desde la epíclesis hasta después de la elevación del cáliz, según las normas de la celebración.",
+            "Durante la homilía.",
+            "Durante el canto de entrada."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Cuál es la función principal del MISAL durante la celebración de la Santa Misa?",
+        options: [
+            "Contener las lecturas bíblicas de cada día.",
+            "Contener las oraciones, textos y partes propias que corresponden al sacerdote y a la celebración de la Misa.",
+            "Contener únicamente los cantos de la celebración.",
+            "Contener exclusivamente los Evangelios."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Cuál es el significado principal de recibir la Sagrada Comunión?",
+        options: [
+            "Participar solamente de un símbolo de unidad entre los asistentes.",
+            "Recibir a Jesucristo vivo realmente presente en la Eucaristía, bajo las especies de pan y vino.",
+            "Recibir una bendición especial del sacerdote.",
+            "Conmemorar únicamente la Última Cena como un acontecimiento histórico."
+        ],
+        answer: 1
+    }
+],
         
 
         ritos: [
