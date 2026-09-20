@@ -651,7 +651,9 @@ function entrarAdministracion(destino) {
         servicio: "El Servicio",
         apocalipsis: "El Apocalipsis",
         parabolas: "Parábolas de Jesús",
-        hhscc: "Hijas de los Sagrados Corazones"
+        hhscc: "Hijas de los Sagrados Corazones",
+        misa: "La Santa Misa y sus principales Ritos"
+
     };
 
     const bancosPreguntas = {
@@ -809,6 +811,322 @@ function entrarAdministracion(destino) {
             { q: "¿Qué famoso misionero salesiano fue quien llevó a Luis Variara a trabajar a Agua de Dios?", options: ["El Padre Miguel Unia", "Don Bosco", "El Cardenal Cagliero", "El Padre Miguel Rúa."], answer: 0 },
             { q: "¿Qué expresiones artísticas y sociales usó Luis Variara para transformar la tristeza del lazareto?", options: ["La música, la banda y el teatro", "Pintura abstracta", "Oratoria política", "Deporte extremo"], answer: 0 },
             { q: "¿Qué palabras le susurró Don Miguel Rua a Luis Variara el día de sus votos religiosos?", options: ["¡Variara, no varíes!", "¡Sé fuerte y valiente!", "Id y evangelizad", "Camina hacia adelante"], answer: 0 }
+        ],
+
+        misa: [
+    {
+        q: "¿Cómo se clasifica la Santa Misa?",
+        options: [
+            "En dos: Liturgia de la Palabra y Liturgia Eucarística.",
+            "En tres: Ritos iniciales, Liturgia de la Palabra y Rito de despedida.",
+            "En cuatro: Ritos iniciales, Liturgia de la Palabra, Liturgia Eucarística y Ritos finales.",
+            "En cinco: Entrada, Lecturas, Ofertorio, Comunión y Salida."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Qué se realiza principalmente durante la Liturgia de la Palabra?",
+        options: [
+            "La consagración del pan y del vino.",
+            "Primera y Segunda Lectura, el Salmo, el Evangelio y la Homilía.",
+            "La distribución de la Comunión.",
+            "La exposición del Santísimo Sacramento."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "Al finalizar la Primera y la Segunda Lectura, ¿qué responde la asamblea?",
+        options: [
+            "Gloria a Ti, Señor Jesús.",
+            "Te alabamos, Señor.",
+            "Amén, Señor.",
+            "Te damos gracias, Señor."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Qué responde la asamblea al terminar la proclamación del Evangelio?",
+        options: [
+            "Te alabamos, Señor.",
+            "Gloria al Padre, al Hijo y al Espíritu Santo.",
+            "Gloria a Ti, Señor Jesús.",
+            "Amén, amén."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cómo se llama el gesto de llevar la mano a la frente, al pecho y a ambos hombros diciendo «En el nombre del Padre, y del Hijo, y del Espíritu Santo»?",
+        options: [
+            "Signarse.",
+            "Persignarse.",
+            "Genuflexionarse.",
+            "Santiguarse."
+        ],
+        answer: 3
+    },
+
+    {
+        q: "¿Qué significa signarse?",
+        options: [
+            "Hacer una pequeña cruz únicamente sobre los labios.",
+            "Hacer tres pequeñas cruces: una en la frente, otra en los labios y otra en el pecho diciendo «Por la señal de la Santa Cruz, de nuestros enemigos líbranos, Señor, Dios nuestro».",
+            "Hacer tres inclinaciones ante el altar.",
+            "Llevar la mano a la frente, al pecho y a ambos hombros diciendo «En el nombre del Padre, y del Hijo, y del Espíritu Santo»."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Cómo se llama el gesto de doblar rodilla hasta tocar el suelo ante el Santísimo Sacramento?",
+        options: [
+            "Genuflexión simple.",
+            "Inclinación.",
+            "Genuflexión doble.",
+            "Reverencia."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cuándo se realiza normalmente la genuflexión durante la Misa?",
+        options: [
+            "Cada vez que comienza una lectura.",
+            "Ante el Santísimo Sacramento, cuando corresponde según las normas litúrgicas.",
+            "Cada vez que se escucha el nombre de Jesús.",
+            "Antes de sentarse después de la homilía."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Qué significa PERSIGNARSE?",
+        options: [
+            "Hacer únicamente una cruz sobre el pecho.",
+            "Hacer únicamente las tres cruces en la frente, labios y pecho.",
+            "Realizar conjuntamente el signo de santiguarse y signarse.",
+            "Arrodillarse con ambas rodillas ante el Santísimo."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cómo se llama el cambio de las sustancias del pan y del vino en el Cuerpo y la Sangre de Cristo durante la consagración?",
+        options: [
+            "Encarnación.",
+            "Transfiguración.",
+            "Transubstanciación.",
+            "Resurrección."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿En qué momento de la Santa Misa ocurre la consagración?",
+        options: [
+            "Durante el acto penitencial.",
+            "Durante la Liturgia de la Palabra.",
+            "Dentro de la Plegaria Eucarística, cuando el sacerdote pronuncia las palabras de la institución.",
+            "Durante el rito de despedida."
+        ],
+        answer: 2
+    },
+
+    {
+        q: "¿Cuándo debe ponerse de pie normalmente la asamblea durante la Santa Misa?",
+        options: [
+            "Durante la proclamación del Evangelio, el Credo, la oración de los fieles y otros momentos establecidos por la liturgia.",
+            "Únicamente durante la Comunión.",
+            "Solamente cuando entra el sacerdote.",
+            "Nunca durante las lecturas."
+        ],
+        answer: 0
+    },
+
+    {
+        q: "¿En qué momento se arrodilla normalmente la asamblea durante la Plegaria Eucarística?",
+        options: [
+            "Durante toda la Liturgia de la Palabra.",
+            "Durante la consagración, desde la epíclesis hasta después de la elevación del cáliz, según las normas de la celebración.",
+            "Durante la homilía.",
+            "Durante el canto de entrada."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Cuál es la función principal del MISAL durante la celebración de la Santa Misa?",
+        options: [
+            "Contener las lecturas bíblicas de cada día.",
+            "Contener las oraciones, textos y partes propias que corresponden al sacerdote y a la celebración de la Misa.",
+            "Contener únicamente los cantos de la celebración.",
+            "Contener exclusivamente los Evangelios."
+        ],
+        answer: 1
+    },
+
+    {
+        q: "¿Cuál es el significado principal de recibir la Sagrada Comunión?",
+        options: [
+            "Participar solamente de un símbolo de unidad entre los asistentes.",
+            "Recibir a Jesucristo vivo realmente presente en la Eucaristía, bajo las especies de pan y vino.",
+            "Recibir una bendición especial del sacerdote.",
+            "Conmemorar únicamente la Última Cena como un acontecimiento histórico."
+        ],
+        answer: 1
+    }
+],
+        
+
+        ritos: [
+            {
+                q: "¿Cuántos sacramentos reconoce la Iglesia Católica?",
+                options: ["5", "6", "7", "8"],
+                answer: 2
+            },
+            {
+                q: "¿Cuál de estos es un sacramento de iniciación cristiana?",
+                options: [
+                    "Matrimonio",
+                    "Bautismo",
+                    "Unción de los Enfermos",
+                    "Orden Sacerdotal"
+                ],
+                answer: 1
+            },
+            {
+                q: "¿Cuáles son los tres sacramentos de iniciación cristiana?",
+                options: [
+                    "Bautismo, Confirmación y Eucaristía",
+                    "Bautismo, Matrimonio y Orden",
+                    "Confirmación, Matrimonio y Reconciliación",
+                    "Eucaristía, Matrimonio y Unción"
+                ],
+                answer: 0
+            },
+            {
+                q: "¿Qué sacramento nos incorpora a la Iglesia y nos hace hijos de Dios?",
+                options: [
+                    "Confirmación",
+                    "Bautismo",
+                    "Matrimonio",
+                    "Reconciliación"
+                ],
+                answer: 1
+            },
+            {
+                q: "¿Qué sacramento fortalece la gracia recibida en el Bautismo?",
+                options: [
+                    "Confirmación",
+                    "Eucaristía",
+                    "Matrimonio",
+                    "Unción de los Enfermos"
+                ],
+                answer: 0
+            },
+            {
+                q: "¿En qué sacramento recibimos el Cuerpo y la Sangre de Cristo?",
+                options: [
+                    "Bautismo",
+                    "Confirmación",
+                    "Eucaristía",
+                    "Reconciliación"
+                ],
+                answer: 2
+            },
+            {
+                q: "¿Cómo se llama también el sacramento en el que recibimos el perdón de los pecados?",
+                options: [
+                    "Confirmación",
+                    "Reconciliación",
+                    "Bautismo",
+                    "Eucaristía"
+                ],
+                answer: 1
+            },
+            {
+                q: "¿Qué sacramento une a un hombre y una mujer en matrimonio según la Iglesia?",
+                options: [
+                    "Orden Sacerdotal",
+                    "Matrimonio",
+                    "Confirmación",
+                    "Bautismo"
+                ],
+                answer: 1
+            },
+            {
+                q: "¿Qué sacramento está destinado especialmente a fortalecer a quienes padecen una enfermedad grave?",
+                options: [
+                    "Unción de los Enfermos",
+                    "Eucaristía",
+                    "Confirmación",
+                    "Matrimonio"
+                ],
+                answer: 0
+            },
+            {
+                q: "¿Qué sacramento está relacionado con el ministerio de diáconos, sacerdotes y obispos?",
+                options: [
+                    "Bautismo",
+                    "Orden Sacerdotal",
+                    "Matrimonio",
+                    "Reconciliación"
+                ],
+                answer: 1
+            },
+            {
+                q: "¿Cómo se llama el sacramento en el que celebramos el memorial de la Pasión, Muerte y Resurrección de Cristo?",
+                options: [
+                    "Eucaristía",
+                    "Bautismo",
+                    "Confirmación",
+                    "Matrimonio"
+                ],
+                answer: 0
+            },
+            {
+                q: "¿Qué signo se utiliza de manera fundamental en el Bautismo?",
+                options: [
+                    "Agua",
+                    "Pan",
+                    "Incienso",
+                    "Campanas"
+                ],
+                answer: 0
+            },
+            {
+                q: "¿Qué elementos son consagrados durante la celebración eucarística?",
+                options: [
+                    "Agua y aceite",
+                    "Pan y vino",
+                    "Sal y agua",
+                    "Incienso y velas"
+                ],
+                answer: 1
+            },
+            {
+                q: "¿Cómo se llama el período de preparación para la celebración de la Pascua?",
+                options: [
+                    "Adviento",
+                    "Cuaresma",
+                    "Navidad",
+                    "Pentecostés"
+                ],
+                answer: 1
+            },
+            {
+                q: "¿Qué celebra la Iglesia en Pentecostés?",
+                options: [
+                    "El nacimiento de Jesús",
+                    "La Resurrección de Jesús",
+                    "La venida del Espíritu Santo sobre los apóstoles",
+                    "El Bautismo de Jesús"
+                ],
+                answer: 2
+            }
         ]
     };
 
